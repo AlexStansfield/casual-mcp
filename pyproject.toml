@@ -1,0 +1,45 @@
+[project]
+name = "casual-mcp"
+version = "0.1.0"
+description = "Multi-server MCP client for LLM tool orchestration and prompt tuning"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "amadeus>=12.0.0",
+    "fastapi>=0.115.12",
+    "fastmcp>=2.2.8",
+    "jinja2>=3.1.6",
+    "ollama>=0.4.8",
+    "openai>=1.78.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "ruff",
+    "black",
+    "mypy",
+    "pytest",
+    "coverage"
+]
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[project.scripts]
+casual-mcp = "casual_mcp.main:main"
+
+[tool.black]
+line-length = 100
+target-version = ["py310"]
+
+[tool.ruff]
+line-length = 100
+lint.extend-select = ["I", "UP", "F", "E", "W"]
+exclude = ["tests/fixtures", "src/tuner"]
+
+[tool.mypy]
+strict = true
+ignore_missing_imports = true

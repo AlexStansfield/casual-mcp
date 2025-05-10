@@ -1,0 +1,41 @@
+{
+    "ollama-llama3.1": {
+        "provider": "ollama",
+        "endpoint": "http://kovacs.jinkies.net:11434",
+        "model": "llama3.1"
+    },
+    "ollama-phi-4-mini": {
+        "provider": "ollama",
+        "endpoint": "http://kovacs.jinkies.net:11434",
+        "model": "phi4-tools"
+    },
+    "ollama-qwen2.5": {
+        "provider": "ollama",
+        "endpoint": "http://kovacs.jinkies.net:11434",
+        "model": "qwen2.5"
+    },
+    "lm-phi-4-mini": {
+        "provider": "openai",
+        "endpoint": "http://kovacs.jinkies.net:1234/v1",
+        "model": "phi-4-mini-instruct"
+    },
+    "lm-hermes-3": {
+        "provider": "openai",
+        "endpoint": "http://kovacs.jinkies.net:1234/v1",
+        "model": "hermes-3-llama-3.2-3b"
+    },
+    "lm-qwen-3": {
+        "provider": "openai",
+        "endpoint": "http://kovacs.jinkies.net:1234/v1",
+        "model": "qwen3-8b"
+    },
+    "lm-toolace-2": {
+        "provider": "openai",
+        "endpoint": "http://kovacs.jinkies.net:1234/v1",
+        "model": "toolace-2-llama-3.1-8b-i1"
+    },
+    "gpt-4o-mini": {
+        "provider": "openai",
+        "model": "gpt-4o-mini"
+    }
+}
