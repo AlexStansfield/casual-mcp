@@ -8,6 +8,9 @@ from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
 from casual_mcp.providers.provider_factory import provider_factory
 from casual_mcp.utils import load_model_config
+from dotenv import load_dotenv
+
+load_dotenv()
 
 app = FastAPI()
 

@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 
 import mcp
 from fastmcp import Client
@@ -8,6 +9,7 @@ from fastmcp.client.transports import PythonStdioTransport
 
 from casual_mcp.models.messages import ToolResultMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
+from casual_mcp.utils import format_tool_call_result
 
 logger = logging.getLogger("casual_mcp.multi_server_mcp_client")
 
@@ -73,12 +75,17 @@ class MultiServerMCPClient:
         
 
     async def execute(self, tool_call: AssistantToolCall):
+        # todo: handle execution error
         result = await self.call_tool(tool_call.function)
 
         logger.debug(f"Tool Call Result: {result}")
 
+        result_format = os.getenv('TOOL_RESULT_FORMAT')
+
+        content = format_tool_call_result(tool_call, result[0].text, style=result_format)
+
         return ToolResultMessage(
             name=tool_call.function.name,
             tool_call_id=tool_call.id,
-            content=", ".join([ob.text for ob in result]),
+            content=content,
         )

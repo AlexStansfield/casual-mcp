@@ -77,6 +77,7 @@ dependencies = [
     { name = "jinja2" },
     { name = "ollama" },
     { name = "openai" },
+    { name = "python-dotenv" },
     { name = "uvicorn" },
 ]
 
@@ -101,6 +102,7 @@ requires-dist = [
     { name = "ollama", specifier = ">=0.4.8" },
     { name = "openai", specifier = ">=1.78.0" },
     { name = "pytest", marker = "extra == 'dev'" },
+    { name = "python-dotenv", specifier = ">=1.1.0" },
     { name = "ruff", marker = "extra == 'dev'" },
     { name = "uvicorn", specifier = ">=0.34.2" },
 ]
