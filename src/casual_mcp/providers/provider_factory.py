@@ -11,7 +11,6 @@ LLMProvider: TypeAlias = OpenAiProvider | OllamaProvider
 
 
 def provider_factory(config: ModelConfig) -> LLMProvider:
-    print(config)
     match config.provider:
         case "ollama":
             logger.info(f"Creating Ollama provider for {config.model} at {config.endpoint}")
@@ -20,8 +19,6 @@ def provider_factory(config: ModelConfig) -> LLMProvider:
             endpoint = None
             if config.endpoint:
                 endpoint = config.endpoint.__str__()
-
-            print(endpoint)
 
             logger.info(f"Creating OpenAI provider for {config.model} at {endpoint}")
             api_key = os.getenv("OPEN_AI_API_KEY")

@@ -1,4 +1,3 @@
-import json
 import logging
 from typing import List
 from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
@@ -14,34 +13,40 @@ class McpToolChat:
         self.tool_client = tool_client
         self.system = system
 
-    async def chat(self, request, messages: List[CasualMcpMessage] = []):
-        if len(messages) == 0:
-            messages.append(SystemMessage(content=self.system))
+    async def chat(self, request, messages: List[CasualMcpMessage] = None):
+        logger.info("Start Chat")
+        if messages is None:
+            messages = [SystemMessage(content=self.system)]
 
         messages.append(UserMessage(content=request))
         tools = await self.tool_client.list_tools()
 
-        final_text = ""
+        response = ""
         while True:
             ai_message = await self.provider.generate(messages, tools)
-            print(ai_message)
-            final_text = ai_message.content
+            response = ai_message.content
 
             # Add the assistant's message
             messages.append(ai_message)
-            logger.info(f"Added assistant message: {ai_message.model_dump_json(indent=2)}")
+            logger.debug(f"Assistant Response: {ai_message.model_dump_json(indent=2)}")
 
             if not ai_message.tool_calls:
                 break
 
-            for tool_call in ai_message.tool_calls:
-                result = await self.tool_client.execute(tool_call)
-                if result:
-                    messages.append(result)
-                    logger.info(f"Added tool result: {result.model_dump_json(indent=2)}")
+            if ai_message.tool_calls and len(ai_message.tool_calls) > 0:
+                logger.info(f"Executing {len(ai_message.tool_calls)} tool calls")
+                result_count = 0
+                for tool_call in ai_message.tool_calls:
+                    result = await self.tool_client.execute(tool_call)
+                    if result:
+                        messages.append(result)
+                        result_count = result_count + 1
+                        logger.debug(f"Added tool result: {result.model_dump_json(indent=2)}")
 
-        logger.info("========== Final Text ========")
-        logger.info(final_text)
+                logger.info(f"Added {result_count} tool results")
+
+        logger.debug(f"""Final Response:
+{response} """)
 
         return messages
 

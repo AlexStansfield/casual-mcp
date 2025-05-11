@@ -52,7 +52,6 @@ class MultiServerMCPClient:
 
     async def list_tools(self):
         """Fetch and aggregate tools from all connected servers."""
-        print(json.dumps([tool.__dict__ for tool in self.tools]))
         return self.tools
 
     async def call_tool(self, function: AssistantToolCallFunction):

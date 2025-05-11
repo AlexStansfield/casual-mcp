@@ -137,6 +137,7 @@ class OpenAiProvider(CasualMcpProvider):
         # Convert Messages to OpenAI format
         converted_messages = convert_messages(messages)
         logger.debug(f"Converted Messages: {converted_messages}")
+        logger.info(f"Adding {len(converted_messages)} messages")
 
         # Call OpenAi API
         try:
