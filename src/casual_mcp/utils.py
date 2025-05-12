@@ -1,8 +1,9 @@
 import json
 from pathlib import Path
-
+from typing import List
+import mcp
 from pydantic import ValidationError
-
+from jinja2 import Environment, FileSystemLoader
 from casual_mcp.models.model_config import ModelConfig, ModelRegistry
 from casual_mcp.models.tool_call import AssistantToolCall
 
@@ -69,3 +70,21 @@ def format_tool_call_result(
         return f"ID: {tool_call.id}\n{result_str}"
     
     return result_str
+
+
+def render_system_prompt(template_name: str, tools: List[mcp.Tool], extra: dict = None) -> str:
+    """
+    Renders a system prompt template with tool definitions.
+    
+    :param template_name: e.g. 'stealth_tools_prompt.j2'
+    :param tools: list of dicts with 'name' and 'description' (at minimum)
+    :param extra: optional additional variables for template
+    :return: rendered system prompt
+    """
+    TEMPLATE_DIR = Path("prompt-templates").resolve()
+    env = Environment(loader=FileSystemLoader(TEMPLATE_DIR), autoescape=False)
+    template = env.get_template(template_name)
+    context = {"tools": tools}
+    if extra:
+        context.update(extra)
+    return template.render(**context)

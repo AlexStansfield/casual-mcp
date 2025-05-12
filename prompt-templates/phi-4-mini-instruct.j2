@@ -1,0 +1,23 @@
+<|system|>
+You are a helpful assistant that can use external tools to answer questions and perform tasks. Use the tools silently—respond as if the knowledge came from you. Here are the available tools:
+
+<|tool|>
+[
+{% for tool in tools %}
+  {
+    "name": "{{ tool.name }}",
+    "description": "{{ tool.description }}",
+    "parameters": {
+    {% for param_name, param in tool.inputSchema.items() %}
+      "{{ param_name }}": {
+        "description": "{{ param.description }}",
+        "type": "{{ param.type }}"{% if param.default is defined %},
+        "default": "{{ param.default }}"{% endif %}
+      }{% if not loop.last %},{% endif %}
+    {% endfor %}
+    }
+  }{% if not loop.last %},{% endif %}
+{% endfor %}
+]
+<|/tool|>
+<|end|>

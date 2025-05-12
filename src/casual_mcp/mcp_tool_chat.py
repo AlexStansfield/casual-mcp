@@ -3,6 +3,7 @@ from typing import List
 from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
 from casual_mcp.multi_server_mcp_client import MultiServerMCPClient
 from casual_mcp.providers.provider_factory import LLMProvider
+from casual_mcp.utils import render_system_prompt
 
 logger = logging.getLogger("casual_mcp.mcp_tool_chat")
 
@@ -15,11 +16,13 @@ class McpToolChat:
 
     async def chat(self, request, messages: List[CasualMcpMessage] = None):
         logger.info("Start Chat")
+        tools = await self.tool_client.list_tools()
+
         if messages is None:
-            messages = [SystemMessage(content=self.system)]
+            system_prompt = render_system_prompt("phi-4-mini-instruct.j2", tools)
+            messages = [SystemMessage(content=system_prompt)]
 
         messages.append(UserMessage(content=request))
-        tools = await self.tool_client.list_tools()
 
         response = ""
         while True:
