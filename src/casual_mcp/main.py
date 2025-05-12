@@ -7,26 +7,24 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
 from casual_mcp.providers.provider_factory import provider_factory
-from casual_mcp.utils import load_model_config
+from casual_mcp.utils import load_model_config, render_system_prompt
 from dotenv import load_dotenv
 
 load_dotenv()
 
 app = FastAPI()
 
-default_system_prompt = """You are a digital assistant who is responsible for helping the user. In addition to plain text responses, you can chose to call one or more of the provided functions.
+default_system_prompt = """You are a helpful assistant.
 
-Use the following rule to decide when to call a function:
-* if the response can be generated from your internal knowledge (e.g., as in the case of queries like "What is the capital of Poland?"), do so
-* if you need external information that can be obtained by calling one or more of the provided functions, generate a function calls
+You have access to up-to-date information through the tools, but you must never mention that tools were used.
 
-If you decide to call functions:
-* prefix function calls with functools marker (no closing marker required)
-* all function calls should be generated in a single JSON list formatted as OpenAI Tool Calls
-* follow the provided JSON schema. Do not hallucinate arguments or values. Do to blindly copy values from the provided samples
-* respect the argument type formatting. E.g., if the type if number and format is float, write value 7 as 7.0
-* make sure you pick the right functions that match the user intent
-"""
+Respond naturally and confidently, as if you already know all the facts.
+
+**Never mention your knowledge cutoff, training data, or when you were last updated.**
+
+You must not speculate or guess about dates — if a date is given to you by a tool, assume it is correct and respond accordingly without disclaimers.
+
+Always present information as current and factual."""
 
 class GenerateRequest(BaseModel):
     model: str = Field(
@@ -51,10 +49,11 @@ logging.basicConfig(
 logger = logging.getLogger("casual_mcp.main")
 
 
-async def perform_chat(model, system, user):
+async def perform_chat(model, user, system: str | None = None):
     # Get Provider from Model Config
     model_configs = load_model_config("models_config.json")
-    provider = provider_factory(model_configs[model])
+    model_config = model_configs[model]
+    provider = provider_factory(model_config)
 
     # Create MCP Tools Client
     mcp_client = MultiServerMCPClient()
@@ -70,6 +69,12 @@ async def perform_chat(model, system, user):
     await mcp_client.connect_to_server_script("mcp-servers/demo/server.py", "demo-server")
     await mcp_client.connect_to_server_script("mcp-servers/time/server.py", "time-server")
 
+    if not system:
+        if (model_config.template):
+            system = render_system_prompt(f"{model_config.template}.j2", await mcp_client.list_tools())
+        else: 
+            system = default_system_prompt
+
     chat = McpToolChat(mcp_client, provider, system)
     return await chat.chat(user)
 
@@ -81,16 +86,12 @@ async def main():
     # user_prompt = "I will give John 5 dollars every day from today. How many dollars will he have on Monday?"
     # user_prompt = "What date will next Monday be?"
     # ser_prompt = "What time is it in London?"
-    return await perform_chat(model, system=default_system_prompt, user=user_prompt)
+    return await perform_chat(model, user=user_prompt)
 
 
 @app.post("/generate")
 async def generate_response(req: GenerateRequest):
-    system_prompt = default_system_prompt
-    if (req.system_prompt):
-        system_prompt = req.system_prompt
-
-    messages = await perform_chat(req.model, system=system_prompt, user=req.user_prompt)
+    messages = await perform_chat(req.model, system=req.system_prompt, user=req.user_prompt)
 
     return {
         "messages": messages,

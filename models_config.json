@@ -17,22 +17,32 @@
     "lm-phi-4-mini": {
         "provider": "openai",
         "endpoint": "http://kovacs.jinkies.net:1234/v1",
-        "model": "phi-4-mini-instruct"
+        "model": "phi-4-mini-instruct",
+        "template": "phi-4-mini-instruct-1"
     },
     "lm-hermes-3": {
         "provider": "openai",
         "endpoint": "http://kovacs.jinkies.net:1234/v1",
-        "model": "hermes-3-llama-3.2-3b"
+        "model": "hermes-3-llama-3.2-3b",
+        "template": "lm-studio-default-tools"
     },
     "lm-qwen-3": {
         "provider": "openai",
         "endpoint": "http://kovacs.jinkies.net:1234/v1",
-        "model": "qwen3-8b"
+        "model": "qwen3-8b",
+        "template": "lm-studio-native-tools"
     },
     "lm-toolace-2": {
         "provider": "openai",
         "endpoint": "http://kovacs.jinkies.net:1234/v1",
-        "model": "toolace-2-llama-3.1-8b-i1"
+        "model": "toolace-2-llama-3.1-8b-i1",
+        "template": "lm-studio-native-tools"
+    },
+    "lm-groq": {
+        "provider": "openai",
+        "endpoint": "http://kovacs.jinkies.net:1234/v1",
+        "model": "llama-3-groq-8b-tool-use",
+        "template": "lm-studio-default-tools"
     },
     "gpt-4o-mini": {
         "provider": "openai",

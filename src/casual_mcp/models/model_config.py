@@ -7,6 +7,7 @@ class BaseModelConfig(BaseModel):
     provider: Literal["openai", "ollama"]
     model: str
     endpoint: HttpUrl | None = None
+    template: str | None = None
 
 
 class OpenAIModelConfig(BaseModelConfig):
