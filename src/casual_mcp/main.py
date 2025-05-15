@@ -69,6 +69,7 @@ async def perform_chat(model, user, system: str | None = None):
     # )
     await mcp_client.connect_to_server_script("mcp-servers/math/server.py", "math")
     await mcp_client.connect_to_server_script("mcp-servers/time-v2/server.py", "time")
+    await mcp_client.connect_to_server_script("mcp-servers/weather/server.py", "weather")
 
     if not system:
         if (model_config.template):
