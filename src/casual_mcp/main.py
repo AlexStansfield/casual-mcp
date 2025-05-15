@@ -1,5 +1,6 @@
 import asyncio
 import logging
+import os
 import sys
 from pathlib import Path
 from typing import Optional
@@ -41,7 +42,7 @@ sys.path.append(str(Path(__file__).parent.resolve()))
 
 # Configure logging
 logging.basicConfig(
-    level=logging.INFO,
+    level=os.getenv("LOG_LEVEL"),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
@@ -66,8 +67,8 @@ async def perform_chat(model, user, system: str | None = None):
     #         "AMADEUS_API_SECRET": os.getenv("AMADEUS_API_SECRET")
     #     }
     # )
-    await mcp_client.connect_to_server_script("mcp-servers/demo/server.py", "demo-server")
-    await mcp_client.connect_to_server_script("mcp-servers/time/server.py", "time-server")
+    await mcp_client.connect_to_server_script("mcp-servers/math/server.py", "math")
+    await mcp_client.connect_to_server_script("mcp-servers/time-v2/server.py", "time")
 
     if not system:
         if (model_config.template):
