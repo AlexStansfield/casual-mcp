@@ -8,7 +8,7 @@ from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
 from casual_mcp.providers.provider_factory import provider_factory
-from casual_mcp.utils import load_model_config, render_system_prompt
+from casual_mcp.utils import load_mcp_server_config, load_model_config, render_system_prompt
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -57,19 +57,9 @@ async def perform_chat(model, user, system: str | None = None):
     provider = provider_factory(model_config)
 
     # Create MCP Tools Client
+    mcp_server_configs = load_mcp_server_config("mcp_server_config.json")
     mcp_client = MultiServerMCPClient()
-
-    # await mcp_client.connect_to_server_script(
-    #     "../mcp-servers/amadeus/src/server.py",
-    #     "flight-server",
-    #     {
-    #         "AMADEUS_API_KEY": os.getenv("AMADEUS_API_KEY"),
-    #         "AMADEUS_API_SECRET": os.getenv("AMADEUS_API_SECRET")
-    #     }
-    # )
-    await mcp_client.connect_to_server_script("mcp-servers/math/server.py", "math")
-    await mcp_client.connect_to_server_script("mcp-servers/time-v2/server.py", "time")
-    await mcp_client.connect_to_server_script("mcp-servers/weather/server.py", "weather")
+    await mcp_client.load_config(mcp_server_configs)
 
     if not system:
         if (model_config.template):

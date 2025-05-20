@@ -2,7 +2,20 @@ from typing import Annotated, Literal
 from fastmcp import FastMCP
 from pydantic import Field
 
-mcp = FastMCP("Math Tools Server", instructions="Provides basic math operations like add, subtract, multiply, and divide.")
+mcp = FastMCP("Math & Conversion Server", instructions="Useful utilities for calculations, percentages, rounding, and unit conversion.")
+conversion_factors = {
+    ("km", "mi"): 0.621371,
+    ("mi", "km"): 1.60934,
+    ("kg", "lb"): 2.20462,
+    ("lb", "kg"): 0.453592,
+    ("g", "oz"): 0.035274,
+    ("oz", "g"): 28.3495,
+    ("m", "ft"): 3.28084,
+    ("ft", "m"): 0.3048,
+    # ("c", "f"): lambda c: (c * 9 / 5) + 32,
+    # ("f", "c"): lambda f: (f - 32) * 5 / 9
+}
+
 
 @mcp.tool(description="Add two numbers.")
 def add(
@@ -61,6 +74,29 @@ def round_number(
         "rounded_value": round(value, places),
         "decimal_places": places
     }
+
+
+# @mcp.tool(description="Convert between supported units: km/mi, kg/lb, g/oz, m/ft, C/F")
+# def unit_convert(
+#     value: Annotated[float, Field(description="The input value")],
+#     from_unit: Annotated[str, Field(description="The unit to convert from")],
+#     to_unit: Annotated[str, Field(description="The unit to convert to")]
+# ) -> dict:
+#     key = (from_unit.lower(), to_unit.lower())
+#     factor = conversion_factors.get(key)
+#     if factor is None:
+#         raise ValueError("Unsupported conversion.")
+#     result = factor(value) if callable(factor) else value * factor
+#     return {
+#         "value": round(result, 4),
+#         "unit": to_unit
+#     }
+
+
+# @mcp.tool(description="List available unit conversions and compatible pairs.")
+# def list_unit_conversions() -> list:
+#     pairs = sorted(set((f"{f} → {t}") for f, t in conversion_factors.keys()))
+#     return pairs
 
 
 if __name__ == "__main__":

@@ -1,12 +1,12 @@
 import json
 import logging
 import os
-
+from typing import Dict, List
 import mcp
 from fastmcp import Client
 from fastmcp.client.logging import LogMessage
-from fastmcp.client.transports import PythonStdioTransport
-
+from fastmcp.client.transports import PythonStdioTransport, ClientTransport, NodeStdioTransport, StreamableHttpTransport, UvxStdioTransport
+from casual_mcp.models.mcp_server_config import McpServerConfig
 from casual_mcp.models.messages import ToolResultMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
 from casual_mcp.utils import format_tool_call_result
@@ -18,11 +18,44 @@ async def my_log_handler(params: LogMessage):
     logger.log(params.level, params.data)
 
 
+def get_server_transport(config: McpServerConfig) -> ClientTransport:
+    match config.type:
+        case 'python':
+            return PythonStdioTransport(
+                script_path=config.path,
+                # env=env,
+            )
+        case 'node':
+            return NodeStdioTransport(
+                script_path=config.path,
+                # env=env,
+            )
+        case 'http':
+            return StreamableHttpTransport(url=config.endpoint)
+        case 'uvx':
+            return UvxStdioTransport(
+                tool_name=config.package,
+            )
+
+
 class MultiServerMCPClient:
     def __init__(self):
-        self.servers: dict[str, Client] = {}  # Map server names to client connections
+        self.servers: Dict[str, Client] = {}  # Map server names to client connections
         self.tools_map = {}  # Map tool names to server names
-        self.tools: list[mcp.types.Tool] = []
+        self.tools: List[mcp.types.Tool] = []
+        self.system_prompts: List[str] = []
+
+    async def load_config(self, config: Dict[str, McpServerConfig]):
+        # Load the servers from config
+        logger.info(f"Loading server config")
+        for name, server_config in config.items():
+            transport = get_server_transport(server_config)
+            await self.connect_to_server(
+                transport, 
+                name, 
+                system_prompt=server_config.system_prompt
+            )
+
 
     async def connect_to_server_script(self, path, name, env={}):
         # Connect via stdio to a local script
@@ -33,7 +66,7 @@ class MultiServerMCPClient:
 
         return await self.connect_to_server(transport, name)
 
-    async def connect_to_server(self, server, name):
+    async def connect_to_server(self, server, name, system_prompt: str = None):
         """Connect to an MCP server and register its tools."""
         logger.debug(f"Connecting to server {name}")
 
@@ -46,9 +79,16 @@ class MultiServerMCPClient:
 
             # Fetch tools and map them to this server
             tools = await server_client.list_tools()
-            self.tools.extend(tools)
             for tool in tools:
+                tool.name = f"{name}-{tool.name}"
                 self.tools_map[tool.name] = name
+            
+            self.tools.extend(tools)
+
+            if system_prompt:
+                prompt = await server_client.get_prompt(system_prompt)
+                if prompt:
+                    self.system_prompts.append(prompt)
 
             return tools
 
@@ -71,7 +111,8 @@ class MultiServerMCPClient:
         server_client = self.servers[server_name]
         async with server_client:
             logger.debug(f"Tool Arguments {tool_args}")
-            return await server_client.call_tool(tool_name, tool_args)
+            real_tool_name = tool_name.removeprefix(f"{server_name}-")
+            return await server_client.call_tool(real_tool_name, tool_args)
         
 
     async def execute(self, tool_call: AssistantToolCall):
@@ -89,3 +130,7 @@ class MultiServerMCPClient:
             tool_call_id=tool_call.id,
             content=content,
         )
+    
+    
+    def get_system_prompts(self) -> List[str]:
+        return self.system_prompts
