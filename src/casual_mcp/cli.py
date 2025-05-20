@@ -1,7 +1,5 @@
-import asyncio
 import typer
 import uvicorn
-from casual_mcp.tuner.benchmark_runner import run_benchmark
 
 app = typer.Typer()
 
