@@ -3,12 +3,12 @@ from typing import Any, Dict, List
 import mcp
 import ollama
 from ollama import ChatResponse, Client, ResponseError
+from casual_mcp.logging import get_logger
 from casual_mcp.models.generation_error import GenerationError
 from casual_mcp.models.messages import AssistantMessage, CasualMcpMessage
 from casual_mcp.providers.abstract_provider import CasualMcpProvider
 
-logger = logging.getLogger("casual_mcp.providers.ollama")
-
+logger = get_logger("providers.ollama")
 
 def convert_tools(mcp_tools: List[mcp.Tool]) -> List[ollama.Tool]:
     raise Exception({"message": "under development"})

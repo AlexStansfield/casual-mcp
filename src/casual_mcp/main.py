@@ -1,13 +1,15 @@
-import logging
 import os
 import sys
 from pathlib import Path
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
+from casual_mcp.logging import configure_logging, get_logger
 from casual_mcp.providers.provider_factory import ProviderFactory
 from casual_mcp.utils import load_config, render_system_prompt
 from dotenv import load_dotenv
+from rich.console import Console
+from rich.logging import RichHandler
 
 load_dotenv()
 config = load_config("config.json");
@@ -43,14 +45,8 @@ class GenerateRequest(BaseModel):
 sys.path.append(str(Path(__file__).parent.resolve()))
 
 # Configure logging
-logging.basicConfig(
-    level=os.getenv("LOG_LEVEL", 'INFO'),
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()],
-)
-
-logger = logging.getLogger("casual_mcp.main")
-
+configure_logging(os.getenv("LOG_LEVEL", 'INFO'))
+logger = get_logger("main")
 
 async def perform_chat(model, user, system: str | None = None):
     # Get Provider from Model Config

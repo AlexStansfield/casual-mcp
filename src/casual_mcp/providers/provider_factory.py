@@ -2,11 +2,12 @@ import logging
 import os
 import mcp
 from typing import Dict, List, TypeAlias
+from casual_mcp.logging import get_logger
 from casual_mcp.models.model_config import ModelConfig
 from casual_mcp.providers.ollama_provider import OllamaProvider
 from casual_mcp.providers.openai_provider import OpenAiProvider
 
-logger = logging.getLogger("casual_mcp.providers.factory")
+logger = get_logger("providers.factory")
 
 LLMProvider: TypeAlias = OpenAiProvider | OllamaProvider
 

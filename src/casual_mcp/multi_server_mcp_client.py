@@ -6,12 +6,14 @@ import mcp
 from fastmcp import Client
 from fastmcp.client.logging import LogMessage
 from fastmcp.client.transports import PythonStdioTransport, ClientTransport, NodeStdioTransport, StreamableHttpTransport, UvxStdioTransport
+from casual_mcp.logging import get_logger
 from casual_mcp.models.mcp_server_config import McpServerConfig
 from casual_mcp.models.messages import ToolResultMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
 from casual_mcp.utils import format_tool_call_result
 
-logger = logging.getLogger("casual_mcp.multi_server_mcp_client")
+# logger = logging.getLogger("casual_mcp.multi_server_mcp_client")
+logger = get_logger("multi_server_mcp_client")
 
 
 async def my_log_handler(params: LogMessage):
@@ -88,6 +90,10 @@ class MultiServerMCPClient:
             for tool in tools:
                 if self.namespace_tools:
                     tool.name = f"{name}-{tool.name}"
+                else:
+                    if self.tools_map.get(tool.name):
+                        raise SystemError(f"Tool name collision {name}:{tool.name} already added by {self.tools_map[tool.name]}")
+
                 self.tools_map[tool.name] = name
             self.tools.extend(tools)
 

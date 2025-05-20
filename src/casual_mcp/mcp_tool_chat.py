@@ -1,10 +1,12 @@
 import logging
 from typing import List
+from casual_mcp.logging import get_logger
 from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
 from casual_mcp.multi_server_mcp_client import MultiServerMCPClient
 from casual_mcp.providers.provider_factory import LLMProvider
 
-logger = logging.getLogger("casual_mcp.mcp_tool_chat")
+# logger = logging.getLogger("casual_mcp.mcp_tool_chat")
+logger = get_logger("mcp_tool_chat")
 
 
 class McpToolChat:

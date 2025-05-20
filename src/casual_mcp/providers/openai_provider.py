@@ -15,12 +15,13 @@ from openai.types.chat import (
     ChatCompletionMessageToolCallParam
 )
 
+from casual_mcp.logging import get_logger
 from casual_mcp.models.generation_error import GenerationError
 from casual_mcp.models.messages import AssistantMessage, CasualMcpMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
 from casual_mcp.providers.abstract_provider import CasualMcpProvider
 
-logger = logging.getLogger("casual_mcp.providers.openai")
+logger = get_logger("providers.openai")
 
 MessageType = dict[str, Any]
 
