@@ -1,17 +1,18 @@
-import asyncio
 import logging
 import os
 import sys
 from pathlib import Path
-from typing import Optional
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
-from casual_mcp.providers.provider_factory import provider_factory
-from casual_mcp.utils import load_mcp_server_config, load_model_config, render_system_prompt
+from casual_mcp.providers.provider_factory import ProviderFactory
+from casual_mcp.utils import load_config, render_system_prompt
 from dotenv import load_dotenv
 
 load_dotenv()
+config = load_config("config.json");
+mcp_client = MultiServerMCPClient(namespace_tools=config.namespace_tools)
+provider_factory = ProviderFactory()
 
 app = FastAPI()
 
@@ -25,7 +26,8 @@ Respond naturally and confidently, as if you already know all the facts.
 
 You must not speculate or guess about dates — if a date is given to you by a tool, assume it is correct and respond accordingly without disclaimers.
 
-Always present information as current and factual."""
+Always present information as current and factual.
+"""
 
 class GenerateRequest(BaseModel):
     model: str = Field(
@@ -42,7 +44,7 @@ sys.path.append(str(Path(__file__).parent.resolve()))
 
 # Configure logging
 logging.basicConfig(
-    level=os.getenv("LOG_LEVEL"),
+    level=os.getenv("LOG_LEVEL", 'INFO'),
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
@@ -52,14 +54,9 @@ logger = logging.getLogger("casual_mcp.main")
 
 async def perform_chat(model, user, system: str | None = None):
     # Get Provider from Model Config
-    model_configs = load_model_config("models_config.json")
-    model_config = model_configs[model]
-    provider = provider_factory(model_config)
+    model_config = config.models[model]
+    provider = provider_factory.get_provider(model, model_config)
 
-    # Create MCP Tools Client
-    mcp_server_configs = load_mcp_server_config("mcp_server_config.json")
-    mcp_client = MultiServerMCPClient()
-    await mcp_client.load_config(mcp_server_configs)
 
     if not system:
         if (model_config.template):
@@ -71,18 +68,12 @@ async def perform_chat(model, user, system: str | None = None):
     return await chat.chat(user)
 
 
-async def main():
-    model = "lm-phi-4-mini"
-    user_prompt = "I had 8 apples and 3 oranges, then Jim gave me 3 apples and 3 oranges. In two days I will give them all to John. What date will I give them to John and how many will he get?"
-    # user_prompt = "What day is it tomorrow?"
-    # user_prompt = "I will give John 5 dollars every day from today. How many dollars will he have on Monday?"
-    # user_prompt = "What date will next Monday be?"
-    # ser_prompt = "What time is it in London?"
-    return await perform_chat(model, user=user_prompt)
-
-
 @app.post("/generate")
 async def generate_response(req: GenerateRequest):
+    if len(mcp_client.tools) == 0:
+        await mcp_client.load_config(config.servers)
+        provider_factory.set_tools(await mcp_client.list_tools())
+
     messages = await perform_chat(req.model, system=req.system_prompt, user=req.user_prompt)
 
     return {
@@ -90,5 +81,3 @@ async def generate_response(req: GenerateRequest):
         "response": messages[len(messages) - 1].content
     }
 
-if __name__ == "__main__":
-    asyncio.run(main())

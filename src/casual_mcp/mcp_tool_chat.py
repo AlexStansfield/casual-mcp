@@ -24,12 +24,12 @@ class McpToolChat:
 
         response = ""
         while True:
+            logger.info("Calling the LLM")
             ai_message = await self.provider.generate(messages, tools)
             response = ai_message.content
 
             # Add the assistant's message
             messages.append(ai_message)
-            logger.debug(f"Assistant Response: {ai_message.model_dump_json(indent=2)}")
 
             if not ai_message.tool_calls:
                 break
@@ -38,11 +38,15 @@ class McpToolChat:
                 logger.info(f"Executing {len(ai_message.tool_calls)} tool calls")
                 result_count = 0
                 for tool_call in ai_message.tool_calls:
-                    result = await self.tool_client.execute(tool_call)
+                    try:
+                        result = await self.tool_client.execute(tool_call)
+                    except Exception as e:
+                        logger.error(e)
+                        return messages
                     if result:
                         messages.append(result)
                         result_count = result_count + 1
-                        logger.debug(f"Added tool result: {result.model_dump_json(indent=2)}")
+                        # logger.debug(f"Added tool result: {result.model_dump_json(indent=2)}")
 
                 logger.info(f"Added {result_count} tool results")
 

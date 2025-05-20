@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Dict, Literal, Optional
 from pydantic import BaseModel, RootModel
 
 
@@ -8,27 +8,26 @@ class BaseMcpServerConfig(BaseModel):
 
 
 class PythonMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["python"]
+    type: Literal["python"] = "python"
     path: str
+    env: Optional[Dict[str, str] | None] = None
 
 
 class UvxMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["uvx"]
+    type: Literal["uvx"] = "uvx"
     package: str
+    env: Optional[Dict[str, str] | None] = None
 
 
 class NodeMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["node"]
+    type: Literal["node"] = "node"
     path: str
+    env: Optional[Dict[str, str] | None] = None
 
 
 class HttpMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["http"]
+    type: Literal["http"] = "http"
     endpoint: str
 
 
 McpServerConfig = PythonMcpServerConfig | NodeMcpServerConfig | HttpMcpServerConfig | UvxMcpServerConfig
-
-
-class McpServerConfigRegistry(RootModel[dict[str, McpServerConfig]]):
-    pass

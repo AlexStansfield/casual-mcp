@@ -1,0 +1,85 @@
+{
+    "namespaced_tools": false,
+    "models": {
+        "ollama-llama3.1": {
+            "provider": "ollama",
+            "endpoint": "http://kovacs.jinkies.net:11434",
+            "model": "llama3.1"
+        },
+        "ollama-phi-4-mini": {
+            "provider": "ollama",
+            "endpoint": "http://kovacs.jinkies.net:11434",
+            "model": "phi4-tools"
+        },
+        "ollama-qwen2.5": {
+            "provider": "ollama",
+            "endpoint": "http://kovacs.jinkies.net:11434",
+            "model": "qwen2.5"
+        },
+        "lm-phi-4-mini": {
+            "provider": "openai",
+            "endpoint": "http://kovacs.jinkies.net:1234/v1",
+            "model": "phi-4-mini-instruct",
+            "template": "phi-4-mini-instruct-1"
+        },
+        "lm-hermes-3": {
+            "provider": "openai",
+            "endpoint": "http://kovacs.jinkies.net:1234/v1",
+            "model": "hermes-3-llama-3.2-3b",
+            "template": "lm-studio-default-tools"
+        },
+        "lm-qwen-3": {
+            "provider": "openai",
+            "endpoint": "http://kovacs.jinkies.net:1234/v1",
+            "model": "qwen3-8b",
+            "template": "lm-studio-native-tools"
+        },
+        "lm-toolace-2": {
+            "provider": "openai",
+            "endpoint": "http://kovacs.jinkies.net:1234/v1",
+            "model": "toolace-2-llama-3.1-8b-i1",
+            "template": "lm-studio-native-tools"
+        },
+        "lm-groq": {
+            "provider": "openai",
+            "endpoint": "http://kovacs.jinkies.net:1234/v1",
+            "model": "llama-3-groq-8b-tool-use",
+            "template": "lm-studio-default-tools"
+        },
+        "gpt-4o-mini": {
+            "provider": "openai",
+            "model": "gpt-4o-mini"
+        },
+        "gpt-4.1-nano": {
+            "provider": "openai",
+            "model": "gpt-4.1-nano"
+        },
+        "gpt-4.1-mini": {
+            "provider": "openai",
+            "model": "gpt-4.1-mini"
+        },
+        "gpt-4.1": {
+            "provider": "openai",
+            "model": "gpt-4.1"
+        }
+    },
+    "servers": {
+        "math": {
+            "type": "python",
+            "path": "mcp-servers/math/server.py"
+        },
+        "time": {
+            "type": "python",
+            "path": "mcp-servers/time-v2/server.py"
+        },
+        "weather": {
+            "type": "python",
+            "path": "mcp-servers/weather/server.py"
+        },
+        "words": {
+            "type": "python",
+            "path": "mcp-servers/words/server.py"
+        }
+    }
+
+}

@@ -4,45 +4,26 @@ from typing import List
 import mcp
 from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
-from casual_mcp.models.mcp_server_config import McpServerConfig, McpServerConfigRegistry
-from casual_mcp.models.model_config import ModelConfig, ModelRegistry
+from casual_mcp.models.config import Config
+from casual_mcp.models.mcp_server_config import McpServerConfig
+from casual_mcp.models.model_config import ModelConfig
 from casual_mcp.models.tool_call import AssistantToolCall
 
-
-def load_model_config(path: str | Path) -> dict[str, ModelConfig]:
+def load_config(path: str | Path) -> Config:
     path = Path(path)
 
     if not path.exists():
-        raise FileNotFoundError(f"Model config file not found: {path}")
+        raise FileNotFoundError(f"Config file not found: {path}")
 
     try:
         with path.open("r", encoding="utf-8") as f:
             raw_data = json.load(f)
-        registry = ModelRegistry.model_validate(raw_data)
-        return registry.root
+
+        return Config(**raw_data)
     except ValidationError as ve:
-        raise ValueError(f"Invalid model config:\n{ve}") from ve
+        raise ValueError(f"Invalid config:\n{ve}") from ve
     except json.JSONDecodeError as je:
-        raise ValueError(f"Could not parse JSON:\n{je}") from je
-
-
-
-def load_mcp_server_config(path: str | Path) -> dict[str, McpServerConfig]:
-    path = Path(path)
-
-    if not path.exists():
-        raise FileNotFoundError(f"Model config file not found: {path}")
-
-    try:
-        with path.open("r", encoding="utf-8") as f:
-            raw_data = json.load(f)
-        registry = McpServerConfigRegistry.model_validate(raw_data)
-        return registry.root
-    except ValidationError as ve:
-        raise ValueError(f"Invalid model config:\n{ve}") from ve
-    except json.JSONDecodeError as je:
-        raise ValueError(f"Could not parse JSON:\n{je}") from je
-
+        raise ValueError(f"Could not parse config JSON:\n{je}") from je
 
 def format_tool_call_result(
     tool_call: AssistantToolCall, 

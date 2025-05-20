@@ -1,6 +1,6 @@
 import logging
 import traceback
-from typing import Any
+from typing import Any, List
 
 import mcp
 from openai import OpenAI
@@ -53,7 +53,7 @@ def convert_tool(mcp_tool: mcp.Tool) -> ChatCompletionToolParam | None:
             "parameters": {
                 "type": "object",
                 "properties": mcp_tool.inputSchema["properties"],
-                "required": mcp_tool.inputSchema["required"],
+                "required": mcp_tool.inputSchema.get("required", []),
             },
         },
     }
@@ -118,7 +118,12 @@ def convert_tool_calls(
 
 
 class OpenAiProvider(CasualMcpProvider):
-    def __init__(self, model: str, api_key: str, endpoint: str = None):
+    def __init__(self, model: str, api_key: str, tools: List[mcp.Tool], endpoint: str = None):
+        
+        # Convert MCP Tools to OpenAI format
+        self.tools = convert_tools(tools)
+        logger.debug(f"Converted Tools: {self.tools}")
+        logger.info(f"Adding {len(self.tools)} tools")
         self.model = model
         self.client = OpenAI(
             base_url=endpoint,
@@ -129,11 +134,6 @@ class OpenAiProvider(CasualMcpProvider):
         logger.info("Start Generating")
         logger.debug(f"Model: {self.model}")
 
-        # Convert MCP Tools to OpenAI format
-        converted_tools = convert_tools(tools)
-        logger.debug(f"Converted Tools: {converted_tools}")
-        logger.info(f"Adding {len(converted_tools)} tools")
-
         # Convert Messages to OpenAI format
         converted_messages = convert_messages(messages)
         logger.debug(f"Converted Messages: {converted_messages}")
@@ -142,7 +142,7 @@ class OpenAiProvider(CasualMcpProvider):
         # Call OpenAi API
         try:
             result = self.client.chat.completions.create(
-                model=self.model, messages=converted_messages, tools=converted_tools
+                model=self.model, messages=converted_messages, tools=self.tools
             )
 
             response = result.choices[0]

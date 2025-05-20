@@ -19,7 +19,3 @@ class OllamaModelConfig(BaseModelConfig):
 
 
 ModelConfig = OpenAIModelConfig | OllamaModelConfig
-
-
-class ModelRegistry(RootModel[dict[str, ModelConfig]]):
-    pass

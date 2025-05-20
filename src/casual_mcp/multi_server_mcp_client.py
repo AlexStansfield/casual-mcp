@@ -23,27 +23,31 @@ def get_server_transport(config: McpServerConfig) -> ClientTransport:
         case 'python':
             return PythonStdioTransport(
                 script_path=config.path,
-                # env=env,
+                env=config.env
             )
         case 'node':
             return NodeStdioTransport(
                 script_path=config.path,
-                # env=env,
+                env=config.env
             )
         case 'http':
-            return StreamableHttpTransport(url=config.endpoint)
+            return StreamableHttpTransport(
+                url=config.endpoint
+                )
         case 'uvx':
             return UvxStdioTransport(
                 tool_name=config.package,
+                env_vars=config.env
             )
 
 
 class MultiServerMCPClient:
-    def __init__(self):
+    def __init__(self, namespace_tools: bool = False):
         self.servers: Dict[str, Client] = {}  # Map server names to client connections
         self.tools_map = {}  # Map tool names to server names
         self.tools: List[mcp.types.Tool] = []
         self.system_prompts: List[str] = []
+        self.namespace_tools = namespace_tools
 
     async def load_config(self, config: Dict[str, McpServerConfig]):
         # Load the servers from config
@@ -79,10 +83,12 @@ class MultiServerMCPClient:
 
             # Fetch tools and map them to this server
             tools = await server_client.list_tools()
+
+            # If we are namespacing servers then change the tool names
             for tool in tools:
-                tool.name = f"{name}-{tool.name}"
+                if self.namespace_tools:
+                    tool.name = f"{name}-{tool.name}"
                 self.tools_map[tool.name] = name
-            
             self.tools.extend(tools)
 
             if system_prompt:
@@ -101,18 +107,22 @@ class MultiServerMCPClient:
         tool_name = function.name
         tool_args = json.loads(function.arguments)
 
-        if not self.tools_map[tool_name]:
+        if self.namespace_tools:
+            tool_name = tool_name.removeprefix(f"{server_name}-")
+        else:
+            tool_name = tool_name
+
+        if not self.tools_map.get(tool_name):
             raise ValueError(f"Tool not found: {tool_name}")
 
-        logger.debug(f"Calling tool {tool_name}")
+        logger.info(f"Calling tool {tool_name}")
 
         # Find which server has this tool
         server_name = self.tools_map.get(tool_name)
         server_client = self.servers[server_name]
         async with server_client:
-            logger.debug(f"Tool Arguments {tool_args}")
-            real_tool_name = tool_name.removeprefix(f"{server_name}-")
-            return await server_client.call_tool(real_tool_name, tool_args)
+            # Remove the sever name if the tools are namespaced
+            return await server_client.call_tool(tool_name, tool_args)
         
 
     async def execute(self, tool_call: AssistantToolCall):
