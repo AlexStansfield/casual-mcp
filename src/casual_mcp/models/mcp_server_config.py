@@ -1,5 +1,5 @@
 from typing import Dict, Literal, Optional
-from pydantic import BaseModel, RootModel
+from pydantic import BaseModel
 
 
 class BaseMcpServerConfig(BaseModel):
@@ -27,7 +27,7 @@ class NodeMcpServerConfig(BaseMcpServerConfig):
 
 class HttpMcpServerConfig(BaseMcpServerConfig):
     type: Literal["http"] = "http"
-    endpoint: str
+    url: str
 
 
 McpServerConfig = PythonMcpServerConfig | NodeMcpServerConfig | HttpMcpServerConfig | UvxMcpServerConfig

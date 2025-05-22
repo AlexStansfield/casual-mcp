@@ -1,8 +1,12 @@
 import typer
 import uvicorn
+from rich.console import Console
+from rich.table import Table
+
+from casual_mcp.utils import load_config
 
 app = typer.Typer()
-
+console = Console()
 
 @app.command()
 def serve(host: str = "0.0.0.0", port: int = 8000, reload: bool = True):
@@ -17,6 +21,37 @@ def serve(host: str = "0.0.0.0", port: int = 8000, reload: bool = True):
         app_dir="src"
     )
 
+@app.command()
+def servers():
+    config = load_config('config.json')
+    table = Table("Name", "Type", "Path / Package / Url", "Env")
+
+    for name, server in config.servers.items():
+        path = ''
+        match server.type:
+            case 'python':
+                path = server.path
+            case 'node':
+                path = server.path
+            case 'http':
+                path = server.url
+            case 'uvx':
+                path = server.package
+        env = ''
+
+        table.add_row(name, server.type, path, env)
+
+    console.print(table)
+
+@app.command()
+def models():
+    config = load_config('config.json')
+    table = Table("Name", "Provider", "Model")
+
+    for name, model in config.models.items():
+        table.add_row(name, model.provider, model.model)
+
+    console.print(table)
 
 if __name__ == "__main__":
     app()

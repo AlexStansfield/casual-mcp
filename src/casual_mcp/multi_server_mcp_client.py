@@ -1,5 +1,4 @@
 import json
-import logging
 import os
 from typing import Dict, List
 import mcp
@@ -12,7 +11,6 @@ from casual_mcp.models.messages import ToolResultMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
 from casual_mcp.utils import format_tool_call_result
 
-# logger = logging.getLogger("casual_mcp.multi_server_mcp_client")
 logger = get_logger("multi_server_mcp_client")
 
 
@@ -34,7 +32,7 @@ def get_server_transport(config: McpServerConfig) -> ClientTransport:
             )
         case 'http':
             return StreamableHttpTransport(
-                url=config.endpoint
+                url=config.url
                 )
         case 'uvx':
             return UvxStdioTransport(
@@ -132,13 +130,23 @@ class MultiServerMCPClient:
         
 
     async def execute(self, tool_call: AssistantToolCall):
-        # todo: handle execution error
-        result = await self.call_tool(tool_call.function)
+        try:
+            result = await self.call_tool(tool_call.function)
+        except Exception as e:
+            if isinstance(e, ValueError):
+                logger.warning(e)
+            else:
+                logger.error(f"Error calling tool: {e}")
+            
+            return ToolResultMessage(
+                name=tool_call.function.name,
+                tool_call_id=tool_call.id,
+                content=str(e),
+            )
 
         logger.debug(f"Tool Call Result: {result}")
 
-        result_format = os.getenv('TOOL_RESULT_FORMAT')
-
+        result_format = os.getenv('TOOL_RESULT_FORMAT', 'result')
         content = format_tool_call_result(tool_call, result[0].text, style=result_format)
 
         return ToolResultMessage(

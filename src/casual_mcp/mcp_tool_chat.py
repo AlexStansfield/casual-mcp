@@ -1,12 +1,11 @@
-import logging
-from typing import List
+from typing import Dict, List
 from casual_mcp.logging import get_logger
 from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
 from casual_mcp.multi_server_mcp_client import MultiServerMCPClient
 from casual_mcp.providers.provider_factory import LLMProvider
 
-# logger = logging.getLogger("casual_mcp.mcp_tool_chat")
 logger = get_logger("mcp_tool_chat")
+sessions: Dict[str, List[CasualMcpMessage]] = {}
 
 
 class McpToolChat:
@@ -15,12 +14,36 @@ class McpToolChat:
         self.tool_client = tool_client
         self.system = system
 
-    async def chat(self, request, messages: List[CasualMcpMessage] = None):
+    @staticmethod
+    def get_session(session_id) -> List[CasualMcpMessage] | None:        
+        global sessions
+        return sessions.get(session_id)
+
+    async def chat(
+        self, 
+        request, 
+        messages: List[CasualMcpMessage] = None, 
+        session_id: str | None = None
+    ) -> List[CasualMcpMessage]:
+        global sessions
+
+        # If we have a session ID then create if new and fetch it
+        if session_id:
+            if not sessions.get(session_id):
+                logger.info(f"Starting new session {session_id}")
+                sessions[session_id] = []
+            else:
+                logger.info(f"Retrieving session {session_id} of length {len(sessions[session_id])}")
+            messages = sessions[session_id].copy()
+
         logger.info("Start Chat")
         tools = await self.tool_client.list_tools()
 
-        if messages is None:
+        if messages is None or len(messages) == 0:
+            message_history = []
             messages = [SystemMessage(content=self.system)]
+        else:
+            message_history = messages.copy()
 
         messages.append(UserMessage(content=request))
 
@@ -48,12 +71,15 @@ class McpToolChat:
                     if result:
                         messages.append(result)
                         result_count = result_count + 1
-                        # logger.debug(f"Added tool result: {result.model_dump_json(indent=2)}")
 
                 logger.info(f"Added {result_count} tool results")
 
         logger.debug(f"""Final Response:
 {response} """)
+        
+        new_messages = [item for item in messages if item not in message_history]
+        if session_id:
+            sessions[session_id].extend(new_messages)
 
-        return messages
+        return new_messages
 

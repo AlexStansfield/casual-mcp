@@ -1,15 +1,15 @@
 import os
 import sys
 from pathlib import Path
-from fastapi import FastAPI
+from typing import List
+from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 from casual_mcp import McpToolChat, MultiServerMCPClient
 from casual_mcp.logging import configure_logging, get_logger
+from casual_mcp.models.messages import CasualMcpMessage
 from casual_mcp.providers.provider_factory import ProviderFactory
 from casual_mcp.utils import load_config, render_system_prompt
 from dotenv import load_dotenv
-from rich.console import Console
-from rich.logging import RichHandler
 
 load_dotenv()
 config = load_config("config.json");
@@ -32,6 +32,9 @@ Always present information as current and factual.
 """
 
 class GenerateRequest(BaseModel):
+    session_id: str | None = Field(
+        default=None, title="Session to use"
+    )
     model: str = Field(
         title="Model to user"
     )
@@ -41,6 +44,9 @@ class GenerateRequest(BaseModel):
     user_prompt: str = Field(
         title="User Prompt"
     )
+    messages: List[CasualMcpMessage] | None = Field(
+        default=None, title="Previous messages to supply to the LLM"
+    )
 
 sys.path.append(str(Path(__file__).parent.resolve()))
 
@@ -48,11 +54,16 @@ sys.path.append(str(Path(__file__).parent.resolve()))
 configure_logging(os.getenv("LOG_LEVEL", 'INFO'))
 logger = get_logger("main")
 
-async def perform_chat(model, user, system: str | None = None):
+async def perform_chat(
+    model, 
+    user, 
+    system: str | None = None, 
+    messages: List[CasualMcpMessage] = None,
+    session_id: str | None = None
+) -> List[CasualMcpMessage]:
     # Get Provider from Model Config
     model_config = config.models[model]
     provider = provider_factory.get_provider(model, model_config)
-
 
     if not system:
         if (model_config.template):
@@ -61,19 +72,39 @@ async def perform_chat(model, user, system: str | None = None):
             system = default_system_prompt
 
     chat = McpToolChat(mcp_client, provider, system)
-    return await chat.chat(user)
+    return await chat.chat(user, messages, session_id=session_id)
 
 
-@app.post("/generate")
-async def generate_response(req: GenerateRequest):
+@app.post("/chat")
+async def chat(req: GenerateRequest):
     if len(mcp_client.tools) == 0:
         await mcp_client.load_config(config.servers)
         provider_factory.set_tools(await mcp_client.list_tools())
 
-    messages = await perform_chat(req.model, system=req.system_prompt, user=req.user_prompt)
+    messages = await perform_chat(
+        req.model, 
+        system=req.system_prompt, 
+        user=req.user_prompt, 
+        messages=req.messages,
+        session_id=req.session_id
+    )
 
     return {
         "messages": messages,
         "response": messages[len(messages) - 1].content
     }
 
+
+# This endpoint will either go away or be used for something else, don't use it
+@app.post("/generate")
+async def generate_response(req: GenerateRequest):
+    return await chat(req)
+
+
+@app.get("/chat/session/{session_id}")
+async def get_chat_session(session_id):
+    session = McpToolChat.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+    
+    return session
