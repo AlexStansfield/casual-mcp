@@ -21,11 +21,13 @@ class McpToolChat:
 
     async def chat(
         self, 
-        request, 
+        prompt: str | None = None, 
         messages: List[CasualMcpMessage] = None, 
         session_id: str | None = None
     ) -> List[CasualMcpMessage]:
         global sessions
+
+        # todo: check that we have a prompt or that there is a user message in messages
 
         # If we have a session ID then create if new and fetch it
         if session_id:
@@ -45,9 +47,10 @@ class McpToolChat:
         else:
             message_history = messages.copy()
 
-        messages.append(UserMessage(content=request))
+        if prompt:
+            messages.append(UserMessage(content=prompt))
 
-        response = ""
+        response: str | None = None
         while True:
             logger.info("Calling the LLM")
             ai_message = await self.provider.generate(messages, tools)

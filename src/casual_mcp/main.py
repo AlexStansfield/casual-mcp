@@ -72,7 +72,11 @@ async def perform_chat(
             system = default_system_prompt
 
     chat = McpToolChat(mcp_client, provider, system)
-    return await chat.chat(user, messages, session_id=session_id)
+    return await chat.chat(
+        prompt=user, 
+        messages=messages, 
+        session_id=session_id
+    )
 
 
 @app.post("/chat")

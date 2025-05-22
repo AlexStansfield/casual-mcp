@@ -2,7 +2,6 @@ import typer
 import uvicorn
 from rich.console import Console
 from rich.table import Table
-
 from casual_mcp.utils import load_config
 
 app = typer.Typer()
@@ -11,7 +10,7 @@ console = Console()
 @app.command()
 def serve(host: str = "0.0.0.0", port: int = 8000, reload: bool = True):
     """
-    Start the FastAPI server.
+    Start the Casual MCP API server.
     """
     uvicorn.run(
         "casual_mcp.main:app",
@@ -23,6 +22,9 @@ def serve(host: str = "0.0.0.0", port: int = 8000, reload: bool = True):
 
 @app.command()
 def servers():
+    """
+    Return a table of all configured servers
+    """
     config = load_config('config.json')
     table = Table("Name", "Type", "Path / Package / Url", "Env")
 
@@ -45,6 +47,9 @@ def servers():
 
 @app.command()
 def models():
+    """
+    Return a table of all configured models
+    """
     config = load_config('config.json')
     table = Table("Name", "Provider", "Model")
 
@@ -52,6 +57,7 @@ def models():
         table.add_row(name, model.provider, model.model)
 
     console.print(table)
+
 
 if __name__ == "__main__":
     app()
