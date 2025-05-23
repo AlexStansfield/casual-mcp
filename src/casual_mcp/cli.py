@@ -51,10 +51,14 @@ def models():
     Return a table of all configured models
     """
     config = load_config('config.json')
-    table = Table("Name", "Provider", "Model")
+    table = Table("Name", "Provider", "Model", "Endpoint")
 
     for name, model in config.models.items():
-        table.add_row(name, model.provider, model.model)
+        endpoint = ''
+        if model.provider == 'openai':
+            endpoint = model.endpoint or ''
+
+        table.add_row(name, model.provider, model.model, str(endpoint))
 
     console.print(table)
 
