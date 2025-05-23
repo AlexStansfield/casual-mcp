@@ -2,6 +2,7 @@ import typer
 import uvicorn
 from rich.console import Console
 from rich.table import Table
+
 from casual_mcp.utils import load_config
 
 app = typer.Typer()

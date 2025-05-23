@@ -1,18 +1,19 @@
 import os
 import sys
 from pathlib import Path
-from typing import List
+
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+
 from casual_mcp import McpToolChat, MultiServerMCPClient
 from casual_mcp.logging import configure_logging, get_logger
 from casual_mcp.models.messages import CasualMcpMessage
 from casual_mcp.providers.provider_factory import ProviderFactory
 from casual_mcp.utils import load_config, render_system_prompt
-from dotenv import load_dotenv
 
 load_dotenv()
-config = load_config("config.json");
+config = load_config("config.json")
 mcp_client = MultiServerMCPClient(namespace_tools=config.namespace_tools)
 provider_factory = ProviderFactory()
 
@@ -44,7 +45,7 @@ class GenerateRequest(BaseModel):
     user_prompt: str = Field(
         title="User Prompt"
     )
-    messages: List[CasualMcpMessage] | None = Field(
+    messages: list[CasualMcpMessage] | None = Field(
         default=None, title="Previous messages to supply to the LLM"
     )
 
@@ -55,26 +56,29 @@ configure_logging(os.getenv("LOG_LEVEL", 'INFO'))
 logger = get_logger("main")
 
 async def perform_chat(
-    model, 
-    user, 
-    system: str | None = None, 
-    messages: List[CasualMcpMessage] = None,
+    model,
+    user,
+    system: str | None = None,
+    messages: list[CasualMcpMessage] = None,
     session_id: str | None = None
-) -> List[CasualMcpMessage]:
+) -> list[CasualMcpMessage]:
     # Get Provider from Model Config
     model_config = config.models[model]
     provider = provider_factory.get_provider(model, model_config)
 
     if not system:
         if (model_config.template):
-            system = render_system_prompt(f"{model_config.template}.j2", await mcp_client.list_tools())
-        else: 
+            system = render_system_prompt(
+                f"{model_config.template}.j2",
+                await mcp_client.list_tools()
+            )
+        else:
             system = default_system_prompt
 
     chat = McpToolChat(mcp_client, provider, system)
     return await chat.chat(
-        prompt=user, 
-        messages=messages, 
+        prompt=user,
+        messages=messages,
         session_id=session_id
     )
 
@@ -86,9 +90,9 @@ async def chat(req: GenerateRequest):
         provider_factory.set_tools(await mcp_client.list_tools())
 
     messages = await perform_chat(
-        req.model, 
-        system=req.system_prompt, 
-        user=req.user_prompt, 
+        req.model,
+        system=req.system_prompt,
+        user=req.user_prompt,
         messages=req.messages,
         session_id=req.session_id
     )
@@ -110,5 +114,5 @@ async def get_chat_session(session_id):
     session = McpToolChat.get_session(session_id)
     if not session:
         raise HTTPException(status_code=404, detail="Session not found")
-    
+
     return session

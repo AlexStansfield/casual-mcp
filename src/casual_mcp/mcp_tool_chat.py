@@ -1,11 +1,11 @@
-from typing import Dict, List
+
 from casual_mcp.logging import get_logger
 from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
 from casual_mcp.multi_server_mcp_client import MultiServerMCPClient
 from casual_mcp.providers.provider_factory import LLMProvider
 
 logger = get_logger("mcp_tool_chat")
-sessions: Dict[str, List[CasualMcpMessage]] = {}
+sessions: dict[str, list[CasualMcpMessage]] = {}
 
 
 class McpToolChat:
@@ -15,16 +15,16 @@ class McpToolChat:
         self.system = system
 
     @staticmethod
-    def get_session(session_id) -> List[CasualMcpMessage] | None:        
+    def get_session(session_id) -> list[CasualMcpMessage] | None:
         global sessions
         return sessions.get(session_id)
 
     async def chat(
-        self, 
-        prompt: str | None = None, 
-        messages: List[CasualMcpMessage] = None, 
+        self,
+        prompt: str | None = None,
+        messages: list[CasualMcpMessage] = None,
         session_id: str | None = None
-    ) -> List[CasualMcpMessage]:
+    ) -> list[CasualMcpMessage]:
         global sessions
 
         # todo: check that we have a prompt or that there is a user message in messages
@@ -35,7 +35,9 @@ class McpToolChat:
                 logger.info(f"Starting new session {session_id}")
                 sessions[session_id] = []
             else:
-                logger.info(f"Retrieving session {session_id} of length {len(sessions[session_id])}")
+                logger.info(
+                    f"Retrieving session {session_id} of length {len(sessions[session_id])}"
+                )
             messages = sessions[session_id].copy()
 
         logger.info("Start Chat")
@@ -79,7 +81,7 @@ class McpToolChat:
 
         logger.debug(f"""Final Response:
 {response} """)
-        
+
         new_messages = [item for item in messages if item not in message_history]
         if session_id:
             sessions[session_id].extend(new_messages)

@@ -1,13 +1,13 @@
 import json
 from pathlib import Path
-from typing import List
+
 import mcp
-from pydantic import ValidationError
 from jinja2 import Environment, FileSystemLoader
+from pydantic import ValidationError
+
 from casual_mcp.models.config import Config
-from casual_mcp.models.mcp_server_config import McpServerConfig
-from casual_mcp.models.model_config import ModelConfig
 from casual_mcp.models.tool_call import AssistantToolCall
+
 
 def load_config(path: str | Path) -> Config:
     path = Path(path)
@@ -26,9 +26,9 @@ def load_config(path: str | Path) -> Config:
         raise ValueError(f"Could not parse config JSON:\n{je}") from je
 
 def format_tool_call_result(
-    tool_call: AssistantToolCall, 
-    result: str, 
-    style: str = "function_result", 
+    tool_call: AssistantToolCall,
+    result: str,
+    style: str = "function_result",
     include_id: bool = False
     ) -> str:
     """
@@ -68,14 +68,14 @@ def format_tool_call_result(
 
     if (include_id):
         return f"ID: {tool_call.id}\n{result_str}"
-    
+
     return result_str
 
 
-def render_system_prompt(template_name: str, tools: List[mcp.Tool], extra: dict = None) -> str:
+def render_system_prompt(template_name: str, tools: list[mcp.Tool], extra: dict = None) -> str:
     """
     Renders a system prompt template with tool definitions.
-    
+
     :param template_name: e.g. 'stealth_tools_prompt.j2'
     :param tools: list of dicts with 'name' and 'description' (at minimum)
     :param extra: optional additional variables for template

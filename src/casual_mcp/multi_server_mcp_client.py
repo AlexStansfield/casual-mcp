@@ -1,10 +1,17 @@
 import json
 import os
-from typing import Dict, List
+
 import mcp
 from fastmcp import Client
 from fastmcp.client.logging import LogMessage
-from fastmcp.client.transports import PythonStdioTransport, ClientTransport, NodeStdioTransport, StreamableHttpTransport, UvxStdioTransport
+from fastmcp.client.transports import (
+    ClientTransport,
+    NodeStdioTransport,
+    PythonStdioTransport,
+    StreamableHttpTransport,
+    UvxStdioTransport,
+)
+
 from casual_mcp.logging import get_logger
 from casual_mcp.models.mcp_server_config import McpServerConfig
 from casual_mcp.models.messages import ToolResultMessage
@@ -43,20 +50,20 @@ def get_server_transport(config: McpServerConfig) -> ClientTransport:
 
 class MultiServerMCPClient:
     def __init__(self, namespace_tools: bool = False):
-        self.servers: Dict[str, Client] = {}  # Map server names to client connections
+        self.servers: dict[str, Client] = {}  # Map server names to client connections
         self.tools_map = {}  # Map tool names to server names
-        self.tools: List[mcp.types.Tool] = []
-        self.system_prompts: List[str] = []
+        self.tools: list[mcp.types.Tool] = []
+        self.system_prompts: list[str] = []
         self.namespace_tools = namespace_tools
 
-    async def load_config(self, config: Dict[str, McpServerConfig]):
+    async def load_config(self, config: dict[str, McpServerConfig]):
         # Load the servers from config
-        logger.info(f"Loading server config")
+        logger.info("Loading server config")
         for name, server_config in config.items():
             transport = get_server_transport(server_config)
             await self.connect_to_server(
-                transport, 
-                name, 
+                transport,
+                name,
                 system_prompt=server_config.system_prompt
             )
 
@@ -90,7 +97,9 @@ class MultiServerMCPClient:
                     tool.name = f"{name}-{tool.name}"
                 else:
                     if self.tools_map.get(tool.name):
-                        raise SystemError(f"Tool name collision {name}:{tool.name} already added by {self.tools_map[tool.name]}")
+                        raise SystemError(
+                            f"Tool name collision {name}:{tool.name} already added by {self.tools_map[tool.name]}"  # noqa: E501
+                        )
 
                 self.tools_map[tool.name] = name
             self.tools.extend(tools)
@@ -111,6 +120,10 @@ class MultiServerMCPClient:
         tool_name = function.name
         tool_args = json.loads(function.arguments)
 
+        # Find which server has this tool
+        server_name = self.tools_map.get(tool_name)
+
+        # Remove the sever name if the tools are namespaced
         if self.namespace_tools:
             tool_name = tool_name.removeprefix(f"{server_name}-")
         else:
@@ -121,13 +134,10 @@ class MultiServerMCPClient:
 
         logger.info(f"Calling tool {tool_name}")
 
-        # Find which server has this tool
-        server_name = self.tools_map.get(tool_name)
         server_client = self.servers[server_name]
         async with server_client:
-            # Remove the sever name if the tools are namespaced
             return await server_client.call_tool(tool_name, tool_args)
-        
+
 
     async def execute(self, tool_call: AssistantToolCall):
         try:
@@ -137,7 +147,7 @@ class MultiServerMCPClient:
                 logger.warning(e)
             else:
                 logger.error(f"Error calling tool: {e}")
-            
+
             return ToolResultMessage(
                 name=tool_call.function.name,
                 tool_call_id=tool_call.id,
@@ -154,7 +164,7 @@ class MultiServerMCPClient:
             tool_call_id=tool_call.id,
             content=content,
         )
-    
-    
-    def get_system_prompts(self) -> List[str]:
+
+
+    def get_system_prompts(self) -> list[str]:
         return self.system_prompts
