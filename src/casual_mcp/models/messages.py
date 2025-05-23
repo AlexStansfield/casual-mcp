@@ -1,12 +1,14 @@
-from typing import List, Literal, Optional, TypeAlias
+from typing import Literal, TypeAlias
+
 from pydantic import BaseModel
+
 from casual_mcp.models.tool_call import AssistantToolCall
 
 
 class AssistantMessage(BaseModel):
     role: Literal["assistant"] = "assistant"
-    content: Optional[str]
-    tool_calls: Optional[List[AssistantToolCall]]
+    content: str | None
+    tool_calls: list[AssistantToolCall] | None
 
 
 class SystemMessage(BaseModel):
@@ -20,7 +22,7 @@ class ToolResultMessage(BaseModel):
     tool_call_id: str
     content: str
 
-    
+
 class UserMessage(BaseModel):
     role: Literal["user"] = "user"
     content: str | None

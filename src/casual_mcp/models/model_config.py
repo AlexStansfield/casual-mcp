@@ -1,6 +1,6 @@
 from typing import Literal
 
-from pydantic import BaseModel, HttpUrl, RootModel
+from pydantic import BaseModel, HttpUrl
 
 
 class BaseModelConfig(BaseModel):

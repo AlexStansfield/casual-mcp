@@ -1,28 +1,29 @@
-from typing import Dict, Literal, Optional
+from typing import Literal
+
 from pydantic import BaseModel
 
 
 class BaseMcpServerConfig(BaseModel):
     type: Literal["python", "node", "http", "uvx"]
-    system_prompt: Optional[str | None] = None
+    system_prompt: str | None | None = None
 
 
 class PythonMcpServerConfig(BaseMcpServerConfig):
     type: Literal["python"] = "python"
     path: str
-    env: Optional[Dict[str, str] | None] = None
+    env: dict[str, str] | None | None = None
 
 
 class UvxMcpServerConfig(BaseMcpServerConfig):
     type: Literal["uvx"] = "uvx"
     package: str
-    env: Optional[Dict[str, str] | None] = None
+    env: dict[str, str] | None | None = None
 
 
 class NodeMcpServerConfig(BaseMcpServerConfig):
     type: Literal["node"] = "node"
     path: str
-    env: Optional[Dict[str, str] | None] = None
+    env: dict[str, str] | None | None = None
 
 
 class HttpMcpServerConfig(BaseMcpServerConfig):
@@ -30,4 +31,9 @@ class HttpMcpServerConfig(BaseMcpServerConfig):
     url: str
 
 
-McpServerConfig = PythonMcpServerConfig | NodeMcpServerConfig | HttpMcpServerConfig | UvxMcpServerConfig
+McpServerConfig = (
+    PythonMcpServerConfig
+    | NodeMcpServerConfig
+    | HttpMcpServerConfig
+    | UvxMcpServerConfig
+)
