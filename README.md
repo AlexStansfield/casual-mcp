@@ -1,6 +1,6 @@
-# 🧠 casual-mcp
+# 🧠 Casual MCP
 
-**casual-mcp** is a Python framework for building, evaluating, and serving LLMs with tool-calling capabilities using [Model Context Protocol (MCP)](https://modelcontextprotocol.io).  
+**Casual MCP** is a Python framework for building, evaluating, and serving LLMs with tool-calling capabilities using [Model Context Protocol (MCP)](https://modelcontextprotocol.io).  
 It includes:
 
 - ✅ A multi-server MCP client
@@ -8,8 +8,6 @@ It includes:
 - ✅ A recursive tool-calling chat loop
 - ✅ System prompt templating with Jinja2
 - ✅ A FastAPI server with CLI support
-
----
 
 ## 🔧 Installation
 
@@ -25,11 +23,9 @@ cd casual-mcp
 uv pip install -e .[dev]
 ```
 
----
-
 ## 🧩 Providers
 
-Providers allow access to LLMs, currently only an OpenAI provider is supplied. However in the model configuration you can supply an optional endpoint allowing you to an `openai` compatible API (e.g LM Studio).
+Providers allow access to LLMs, currently only an OpenAI provider is supplied. However in the model configuration you can supply an optional endpoint allowing you to use any `openai` compatible API (e.g LM Studio).
 
 On the todo list is an Ollama provider and the ability to create your own custom providers to use.
 
@@ -64,8 +60,6 @@ Here is a list of functions in JSON format that you can invoke:
 {% endfor %}
 ]
 ```
-
----
 
 ## ⚙️ Configuration File (`config.json`)
 
@@ -129,41 +123,10 @@ Each server has:
 If `true`, tools will be prefixed by server name (e.g., `weather-get_weather`).  
 Useful for disambiguating tool names across servers and avoiding name collision if multiple servers have the same tool name.
 
----
-
-## 🚀 Usage
-
-### Start the API Server
-
-```bash
-casual-mcp serve --host 0.0.0.0 --port 8000
-```
-
-You can then POST to `/chat` to trigger tool-calling LLM responses.
-
-The request takes a json body consisting of:
-- model: the LLM model to use
-- user_prompt: the user prompt string
-- messages: list of chat messages (system, assistant, user, etc) that you can pass to the api, allowing you to keep your own chat session in the client calling the api
-- session_id: an optional ID that stores all the messages from the session and provides them back to the LLM for context
-
-You can either pass in a `user_prompt` or a list of `messages` depending on your use case.
-
-Example:
-```
-{
-    "session_id": "my-test-session",
-    "model": "gpt-4o-mini",
-    "user_prompt": "can you explain what the word consistent means?"
-}
-```
-
----
-
 ## 🛠 CLI Reference
 
 ### `casual-mcp serve`
-Start the FastAPI server.
+Start the API server.
 
 **Options:**
 - `--host`: Host to bind (default `0.0.0.0`)
@@ -190,8 +153,7 @@ Loads the config and outputs the list of models you have configured.
 
 #### Example Output
 ```
-$ casual-mcp models 
-casual-mcp models
+$ casual-mcp models
 ┏━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━┓
 ┃ Name              ┃ Provider ┃ Model                     ┃ Endpoint               ┃
 ┡━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━┩
@@ -205,20 +167,33 @@ casual-mcp models
 └───────────────────┴──────────┴───────────────────────────┴────────────────────────┘
 ```
 
-## 📦 Publishing Notes
+## 🚀 API Usage
 
-This package uses `pyproject.toml` and `setup.cfg` for installation and CLI script support.
-
-To build and upload:
+### Start the API Server
 
 ```bash
-uv pip install build twine
-python -m build
-twine upload dist/*
+casual-mcp serve --host 0.0.0.0 --port 8000
 ```
 
----
+You can then POST to `/chat` to trigger tool-calling LLM responses.
+
+The request takes a json body consisting of:
+- `model`: the LLM model to use
+- `user_prompt`: the user prompt string
+- `messages`: list of chat messages (system, assistant, user, etc) that you can pass to the api, allowing you to keep your own chat session in the client calling the api
+- `session_id`: an optional ID that stores all the messages from the session and provides them back to the LLM for context
+
+You can either pass in a `user_prompt` or a list of `messages` depending on your use case.
+
+Example:
+```
+{
+    "session_id": "my-test-session",
+    "model": "gpt-4o-mini",
+    "user_prompt": "can you explain what the word consistent means?"
+}
+```
 
 ## License
 
-MIT
+This software is released under the [MIT License](LICENSE)
