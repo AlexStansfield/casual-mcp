@@ -1,9 +1,11 @@
 [project]
 name = "casual-mcp"
 version = "0.1.0"
-description = "Multi-server MCP client for LLM tool orchestration and prompt tuning"
+description = "Multi-server MCP client for LLM tool orchestration"
 readme = "README.md"
 requires-python = ">=3.10"
+license = { text = "MIT" }
+authors = [{ name = "Alex Stansfield" }]
 dependencies = [
     "amadeus>=12.0.0",
     "dateparser>=1.2.1",
@@ -48,3 +50,12 @@ exclude = ["tests/fixtures", "src/tuner"]
 [tool.mypy]
 strict = true
 ignore_missing_imports = true
+
+[dependency-groups]
+dev = [
+    "black>=25.1.0",
+    "coverage>=7.8.0",
+    "mypy>=1.15.0",
+    "pytest>=8.3.5",
+    "ruff>=0.11.10",
+]
