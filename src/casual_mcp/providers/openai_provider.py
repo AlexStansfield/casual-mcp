@@ -1,6 +1,4 @@
-import logging
-import traceback
-from typing import Any, List
+from typing import Any
 
 import mcp
 from openai import OpenAI
@@ -8,11 +6,11 @@ from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
     ChatCompletionMessageToolCall,
+    ChatCompletionMessageToolCallParam,
     ChatCompletionSystemMessageParam,
     ChatCompletionToolMessageParam,
     ChatCompletionToolParam,
     ChatCompletionUserMessageParam,
-    ChatCompletionMessageToolCallParam
 )
 
 from casual_mcp.logging import get_logger
@@ -38,7 +36,7 @@ def convert_tools(mcp_tools: list[mcp.Tool]) -> list[ChatCompletionToolParam]:
             tools.append(tool)
         else:
             logger.warning(
-                f"Tool missing attributes: name = {mcp_tool.name}, description = {mcp_tool.description}"
+                f"Tool missing attributes: name = {mcp_tool.name}, description = {mcp_tool.description}"  # noqa: E501
             )
 
     return tools
@@ -64,9 +62,9 @@ def convert_tool(mcp_tool: mcp.Tool) -> ChatCompletionToolParam | None:
 def convert_messages(messages: list[CasualMcpMessage]) -> list[ChatCompletionMessageParam]:
     if not messages:
         return messages
-    
+
     logger.info("Converting messages to OpenAI format")
-    
+
     openai_messages: list[ChatCompletionMessageParam] = []
     for msg in messages:
         match msg.role:
@@ -76,10 +74,16 @@ def convert_messages(messages: list[CasualMcpMessage]) -> list[ChatCompletionMes
                     tool_calls = []
                     for tool_call in msg.tool_calls:
                         function = {
-                            "name": tool_call.function.name, 
+                            "name": tool_call.function.name,
                             "arguments": tool_call.function.arguments
                         }
-                        tool_calls.append(ChatCompletionMessageToolCallParam(id=tool_call.id, type=tool_call.type, function=function))
+                        tool_calls.append(
+                            ChatCompletionMessageToolCallParam(
+                                id=tool_call.id,
+                                type=tool_call.type,
+                                function=function
+                            )
+                        )
                 openai_messages.append(
                     ChatCompletionAssistantMessageParam(
                         role="assistant", content=msg.content, tool_calls=tool_calls
@@ -112,15 +116,22 @@ def convert_tool_calls(
         logger.debug(f"Convert Tool: {tool}")
 
         # Create the tool object in the format expected by client.py
-        tool_call = AssistantToolCall(id=tool.id, function=AssistantToolCallFunction(name=tool.function.name, type="function", arguments=tool.function.arguments))
+        tool_call = AssistantToolCall(
+            id=tool.id,
+            function=AssistantToolCallFunction(
+                name=tool.function.name,
+                type="function",
+                arguments=tool.function.arguments
+            )
+        )
         tool_calls.append(tool_call)
 
     return tool_calls
 
 
 class OpenAiProvider(CasualMcpProvider):
-    def __init__(self, model: str, api_key: str, tools: List[mcp.Tool], endpoint: str = None):
-        
+    def __init__(self, model: str, api_key: str, tools: list[mcp.Tool], endpoint: str = None):
+
         # Convert MCP Tools to OpenAI format
         self.tools = convert_tools(tools)
         logger.debug(f"Converted Tools: {self.tools}")
@@ -131,7 +142,11 @@ class OpenAiProvider(CasualMcpProvider):
             api_key=api_key,
         )
 
-    async def generate(self, messages: list[CasualMcpMessage], tools: list[mcp.Tool]) -> AssistantMessage:
+    async def generate(
+        self,
+        messages: list[CasualMcpMessage],
+        tools: list[mcp.Tool]
+    ) -> AssistantMessage:
         logger.info("Start Generating")
         logger.debug(f"Model: {self.model}")
 
@@ -150,7 +165,7 @@ class OpenAiProvider(CasualMcpProvider):
         except Exception as e:
             logger.warning(f"Error in Generation: {e}")
             raise GenerationError(str(e))
-        
+
         logger.debug(response)
 
         # Convert any tool calls

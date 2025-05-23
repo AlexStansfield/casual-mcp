@@ -1,7 +1,8 @@
-import logging
 import os
+from typing import TypeAlias
+
 import mcp
-from typing import Dict, List, TypeAlias
+
 from casual_mcp.logging import get_logger
 from casual_mcp.models.model_config import ModelConfig
 from casual_mcp.providers.ollama_provider import OllamaProvider
@@ -13,13 +14,13 @@ LLMProvider: TypeAlias = OpenAiProvider | OllamaProvider
 
 class ProviderFactory:
     def __init__(self):
-        self.providers: Dict[str, LLMProvider] = {}
+        self.providers: dict[str, LLMProvider] = {}
 
-    
-    def set_tools(self, tools: List[mcp.Tool]):
+
+    def set_tools(self, tools: list[mcp.Tool]):
         self.tools = tools
 
-        
+
     def get_provider(self, name: str, config: ModelConfig) -> LLMProvider:
         if self.providers.get(name):
             return self.providers.get(name)
@@ -42,6 +43,6 @@ class ProviderFactory:
                     self.tools,
                     endpoint=endpoint,
                 )
-            
+
         self.providers[name] = provider
         return provider

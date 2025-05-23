@@ -1,8 +1,9 @@
-import logging
-from typing import Any, Dict, List
+from typing import Any
+
 import mcp
 import ollama
 from ollama import ChatResponse, Client, ResponseError
+
 from casual_mcp.logging import get_logger
 from casual_mcp.models.generation_error import GenerationError
 from casual_mcp.models.messages import AssistantMessage, CasualMcpMessage
@@ -10,15 +11,15 @@ from casual_mcp.providers.abstract_provider import CasualMcpProvider
 
 logger = get_logger("providers.ollama")
 
-def convert_tools(mcp_tools: List[mcp.Tool]) -> List[ollama.Tool]:
+def convert_tools(mcp_tools: list[mcp.Tool]) -> list[ollama.Tool]:
     raise Exception({"message": "under development"})
 
 
-def convert_messages(messages: List[CasualMcpMessage]) -> List[ollama.Message]:
+def convert_messages(messages: list[CasualMcpMessage]) -> list[ollama.Message]:
     raise Exception({"message": "under development"})
 
 
-def convert_tool_calls(response_tool_calls: List[ollama.Message.ToolCall]) -> List[Dict[str, Any]]:
+def convert_tool_calls(response_tool_calls: list[ollama.Message.ToolCall]) -> list[dict[str, Any]]:
     raise Exception({"message": "under development"})
 
 
@@ -29,7 +30,11 @@ class OllamaProvider(CasualMcpProvider):
             host=endpoint,
         )
 
-    async def generate(self, messages: list[CasualMcpMessage], tools: list[mcp.Tool]) -> CasualMcpMessage:
+    async def generate(
+        self,
+        messages: list[CasualMcpMessage],
+        tools: list[mcp.Tool]
+    ) -> CasualMcpMessage:
         logger.info("Start Generating")
         logger.debug(f"Model: {self.model}")
 
@@ -52,12 +57,12 @@ class OllamaProvider(CasualMcpProvider):
                 logger.info(f"Model {self.model} not found, pulling")
                 self.client.pull(self.model)
                 return self.generate(messages, tools)
-            
+
             raise e
         except Exception as e:
             logger.warning(f"Error in Generation: {e}")
             raise GenerationError(str(e))
-        
+
         # Convert any tool calls
         tool_calls = []
         if hasattr(response.message, "tool_calls") and response.message.tool_calls:
