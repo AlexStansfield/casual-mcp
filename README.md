@@ -1,7 +1,7 @@
+# 🧠 Casual MCP
+
 ![PyPI](https://img.shields.io/pypi/v/casual-mcp)
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
-
-# 🧠 Casual MCP
 
 **Casual MCP** is a Python framework for building, evaluating, and serving LLMs with tool-calling capabilities using [Model Context Protocol (MCP)](https://modelcontextprotocol.io).  
 It includes:
@@ -36,22 +36,19 @@ uv pip install -e .[dev]
 
 ## 🧩 Providers
 
-Providers allow access to LLMs, currently only an OpenAI provider is supplied. However in the model configuration you can supply an optional endpoint allowing you to use any `openai` compatible API (e.g LM Studio).
+Providers allow access to LLMs. Currently, only an OpenAI provider is supplied. However, in the model configuration, you can supply an optional `endpoint` allowing you to use any OpenAI-compatible API (e.g., LM Studio).
 
 Ollama support is planned for a future version, along with support for custom pluggable providers via a standard interface.
-
----
 
 ## 🧩 System Prompt Templates
 
 System prompts are defined as [Jinja2](https://jinja.palletsprojects.com) templates in the `prompt-templates/` directory.
 
-They are used in the config file to specify a specific system prompt to use on the model.
+They are used in the config file to specify a system prompt to use per model.
 
-This allows you to define custom system prompts for each model which is useful when using models that do not natively support tools. The templates are passed the tools list in the `tools` variable, so that you can supply the list of tools to the LLM in the prompt.
+This allows you to define custom prompts for each model — useful when using models that do not natively support tools. Templates are passed the tool list in the `tools` variable.
 
-For example:
-```
+```jinja2
 # prompt-templates/example_prompt.j2
 Here is a list of functions in JSON format that you can invoke:
 [
@@ -75,7 +72,7 @@ Here is a list of functions in JSON format that you can invoke:
 
 ## ⚙️ Configuration File (`config.json`)
 
-📄 See the Programmatic Usage section to build configs and messages with typed models.
+📄 See the [Programmatic Usage](#-programmatic-usage) section to build configs and messages with typed models.
 
 The CLI and API can be configured using a `config.json` file that defines:
 
