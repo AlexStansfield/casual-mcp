@@ -1,39 +1,20 @@
-from typing import Literal
+from typing import Any, Literal
 
-from pydantic import BaseModel
-
-
-class BaseMcpServerConfig(BaseModel):
-    type: Literal["python", "node", "http", "uvx"]
-    system_prompt: str | None | None = None
+from pydantic import BaseModel, Field
 
 
-class PythonMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["python"] = "python"
-    path: str
-    env: dict[str, str] | None | None = None
+class StdioServerConfig(BaseModel):
+    command: str
+    args: list[str] = Field(default_factory=list)
+    env: dict[str, Any] = Field(default_factory=dict)
+    cwd: str | None = None
+    transport: Literal["stdio"] = "stdio"
 
 
-class UvxMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["uvx"] = "uvx"
-    package: str
-    env: dict[str, str] | None | None = None
-
-
-class NodeMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["node"] = "node"
-    path: str
-    env: dict[str, str] | None | None = None
-
-
-class HttpMcpServerConfig(BaseMcpServerConfig):
-    type: Literal["http"] = "http"
+class RemoteServerConfig(BaseModel):
     url: str
+    headers: dict[str, str] = Field(default_factory=dict)
+    transport: Literal["streamable-http", "sse", "http"] | None = None
 
 
-McpServerConfig = (
-    PythonMcpServerConfig
-    | NodeMcpServerConfig
-    | HttpMcpServerConfig
-    | UvxMcpServerConfig
-)
+McpServerConfig = StdioServerConfig | RemoteServerConfig

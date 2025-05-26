@@ -3,6 +3,7 @@ import uvicorn
 from rich.console import Console
 from rich.table import Table
 
+from casual_mcp.models.mcp_server_config import RemoteServerConfig
 from casual_mcp.utils import load_config
 
 app = typer.Typer()
@@ -26,23 +27,22 @@ def servers():
     """
     Return a table of all configured servers
     """
-    config = load_config('config.json')
-    table = Table("Name", "Type", "Path / Package / Url", "Env")
+    config = load_config('casual_mcp_config.json')
+    table = Table("Name", "Type", "Command / Url", "Env")
 
     for name, server in config.servers.items():
+        type = 'local'
+        if isinstance(server, RemoteServerConfig):
+            type = 'remote'
+
         path = ''
-        match server.type:
-            case 'python':
-                path = server.path
-            case 'node':
-                path = server.path
-            case 'http':
-                path = server.url
-            case 'uvx':
-                path = server.package
+        if isinstance(server, RemoteServerConfig):
+            path = server.url
+        else:
+            path = f"{server.command} {" ".join(server.args)}"
         env = ''
 
-        table.add_row(name, server.type, path, env)
+        table.add_row(name, type, path, env)
 
     console.print(table)
 
@@ -51,7 +51,7 @@ def models():
     """
     Return a table of all configured models
     """
-    config = load_config('config.json')
+    config = load_config('casual_mcp_config.json')
     table = Table("Name", "Provider", "Model", "Endpoint")
 
     for name, model in config.models.items():

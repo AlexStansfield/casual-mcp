@@ -2,11 +2,20 @@ import json
 from pathlib import Path
 
 import mcp
+from fastmcp import Client
 from jinja2 import Environment, FileSystemLoader
 from pydantic import ValidationError
 
 from casual_mcp.models.config import Config
 from casual_mcp.models.tool_call import AssistantToolCall
+
+
+def load_mcp_client(config: Config) -> Client:
+    servers = {
+        key: value.model_dump()
+        for key, value in config.servers.items()
+    }
+    return Client(servers)
 
 
 def load_config(path: str | Path) -> Config:

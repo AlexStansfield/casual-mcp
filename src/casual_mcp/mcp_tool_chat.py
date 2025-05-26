@@ -1,17 +1,27 @@
+import json
+import os
+
+from fastmcp import Client
 
 from casual_mcp.logging import get_logger
-from casual_mcp.models.messages import CasualMcpMessage, SystemMessage, UserMessage
-from casual_mcp.multi_server_mcp_client import MultiServerMCPClient
+from casual_mcp.models.messages import (
+    CasualMcpMessage,
+    SystemMessage,
+    ToolResultMessage,
+    UserMessage,
+)
+from casual_mcp.models.tool_call import AssistantToolCall
 from casual_mcp.providers.provider_factory import LLMProvider
+from casual_mcp.utils import format_tool_call_result
 
 logger = get_logger("mcp_tool_chat")
 sessions: dict[str, list[CasualMcpMessage]] = {}
 
 
 class McpToolChat:
-    def __init__(self, tool_client: MultiServerMCPClient, provider: LLMProvider, system: str):
+    def __init__(self, mcp_client: Client, provider: LLMProvider, system: str):
         self.provider = provider
-        self.tool_client = tool_client
+        self.mcp_client = mcp_client
         self.system = system
 
     @staticmethod
@@ -41,7 +51,8 @@ class McpToolChat:
             messages = sessions[session_id].copy()
 
         logger.info("Start Chat")
-        tools = await self.tool_client.list_tools()
+        async with self.mcp_client:
+            tools = await self.mcp_client.list_tools()
 
         if messages is None or len(messages) == 0:
             message_history = []
@@ -69,7 +80,7 @@ class McpToolChat:
                 result_count = 0
                 for tool_call in ai_message.tool_calls:
                     try:
-                        result = await self.tool_client.execute(tool_call)
+                        result = await self.execute(tool_call)
                     except Exception as e:
                         logger.error(e)
                         return messages
@@ -88,3 +99,32 @@ class McpToolChat:
 
         return new_messages
 
+
+    async def execute(self, tool_call: AssistantToolCall):
+        tool_name = tool_call.function.name
+        tool_args = json.loads(tool_call.function.arguments)
+        try:
+            async with self.mcp_client:
+                result = await self.mcp_client.call_tool(tool_name, tool_args)
+        except Exception as e:
+            if isinstance(e, ValueError):
+                logger.warning(e)
+            else:
+                logger.error(f"Error calling tool: {e}")
+
+            return ToolResultMessage(
+                name=tool_call.function.name,
+                tool_call_id=tool_call.id,
+                content=str(e),
+            )
+
+        logger.debug(f"Tool Call Result: {result}")
+
+        result_format = os.getenv('TOOL_RESULT_FORMAT', 'result')
+        content = format_tool_call_result(tool_call, result[0].text, style=result_format)
+
+        return ToolResultMessage(
+            name=tool_call.function.name,
+            tool_call_id=tool_call.id,
+            content=content,
+        )
