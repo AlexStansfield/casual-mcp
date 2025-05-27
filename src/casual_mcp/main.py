@@ -68,10 +68,11 @@ async def perform_chat(
 
     if not system:
         if (model_config.template):
-            system = render_system_prompt(
-                f"{model_config.template}.j2",
-                await mcp_client.list_tools()
-            )
+            async with mcp_client:
+                system = render_system_prompt(
+                    f"{model_config.template}.j2",
+                    await mcp_client.list_tools()
+                )
         else:
             system = default_system_prompt
 
