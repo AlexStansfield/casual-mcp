@@ -5,7 +5,7 @@ from fastmcp import Client
 
 from casual_mcp.logging import get_logger
 from casual_mcp.models.messages import (
-    CasualMcpMessage,
+    ChatMessage,
     SystemMessage,
     ToolResultMessage,
     UserMessage,
@@ -15,7 +15,7 @@ from casual_mcp.providers.provider_factory import LLMProvider
 from casual_mcp.utils import format_tool_call_result
 
 logger = get_logger("mcp_tool_chat")
-sessions: dict[str, list[CasualMcpMessage]] = {}
+sessions: dict[str, list[ChatMessage]] = {}
 
 
 class McpToolChat:
@@ -25,16 +25,16 @@ class McpToolChat:
         self.system = system
 
     @staticmethod
-    def get_session(session_id) -> list[CasualMcpMessage] | None:
+    def get_session(session_id) -> list[ChatMessage] | None:
         global sessions
         return sessions.get(session_id)
 
     async def chat(
         self,
         prompt: str | None = None,
-        messages: list[CasualMcpMessage] = None,
+        messages: list[ChatMessage] = None,
         session_id: str | None = None
-    ) -> list[CasualMcpMessage]:
+    ) -> list[ChatMessage]:
         global sessions
 
         # todo: check that we have a prompt or that there is a user message in messages

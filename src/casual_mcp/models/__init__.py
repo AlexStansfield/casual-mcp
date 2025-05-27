@@ -5,7 +5,7 @@ from .mcp_server_config import (
 )
 from .messages import (
     AssistantMessage,
-    CasualMcpMessage,
+    ChatMessage,
     SystemMessage,
     ToolResultMessage,
     UserMessage,
@@ -20,7 +20,7 @@ __all__ = [
     "AssistantMessage",
     "ToolResultMessage",
     "SystemMessage",
-    "CasualMcpMessage",
+    "ChatMessage",
     "ModelConfig",
     "OpenAIModelConfig",
     "McpServerConfig",

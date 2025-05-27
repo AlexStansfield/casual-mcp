@@ -28,4 +28,4 @@ class UserMessage(BaseModel):
     content: str | None
 
 
-CasualMcpMessage: TypeAlias = AssistantMessage | SystemMessage | ToolResultMessage | UserMessage
+ChatMessage: TypeAlias = AssistantMessage | SystemMessage | ToolResultMessage | UserMessage

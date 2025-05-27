@@ -15,7 +15,7 @@ from openai.types.chat import (
 
 from casual_mcp.logging import get_logger
 from casual_mcp.models.generation_error import GenerationError
-from casual_mcp.models.messages import AssistantMessage, CasualMcpMessage
+from casual_mcp.models.messages import AssistantMessage, ChatMessage
 from casual_mcp.models.tool_call import AssistantToolCall, AssistantToolCallFunction
 from casual_mcp.providers.abstract_provider import CasualMcpProvider
 
@@ -59,7 +59,7 @@ def convert_tool(mcp_tool: mcp.Tool) -> ChatCompletionToolParam | None:
     return ChatCompletionToolParam(**tool)
 
 
-def convert_messages(messages: list[CasualMcpMessage]) -> list[ChatCompletionMessageParam]:
+def convert_messages(messages: list[ChatMessage]) -> list[ChatCompletionMessageParam]:
     if not messages:
         return messages
 
@@ -144,7 +144,7 @@ class OpenAiProvider(CasualMcpProvider):
 
     async def generate(
         self,
-        messages: list[CasualMcpMessage],
+        messages: list[ChatMessage],
         tools: list[mcp.Tool]
     ) -> AssistantMessage:
         logger.info("Start Generating")

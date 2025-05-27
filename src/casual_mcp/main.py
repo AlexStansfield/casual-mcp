@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field
 
 from casual_mcp import McpToolChat
 from casual_mcp.logging import configure_logging, get_logger
-from casual_mcp.models.messages import CasualMcpMessage
+from casual_mcp.models.messages import ChatMessage
 from casual_mcp.providers.provider_factory import ProviderFactory
 from casual_mcp.utils import load_config, load_mcp_client, render_system_prompt
 
@@ -45,7 +45,7 @@ class GenerateRequest(BaseModel):
     user_prompt: str = Field(
         title="User Prompt"
     )
-    messages: list[CasualMcpMessage] | None = Field(
+    messages: list[ChatMessage] | None = Field(
         default=None, title="Previous messages to supply to the LLM"
     )
 
@@ -59,9 +59,9 @@ async def perform_chat(
     model,
     user,
     system: str | None = None,
-    messages: list[CasualMcpMessage] = None,
+    messages: list[ChatMessage] = None,
     session_id: str | None = None
-) -> list[CasualMcpMessage]:
+) -> list[ChatMessage]:
     # Get Provider from Model Config
     model_config = config.models[model]
     provider = await provider_factory.get_provider(model, model_config)

@@ -84,7 +84,6 @@ The CLI and API can be configured using a `casual_mcp_config.json` file that def
 
 ```json
 {
-  "namespaced_tools": false,
   "models": {
     "lm-qwen-3": {
       "provider": "openai",
@@ -99,11 +98,10 @@ The CLI and API can be configured using a `casual_mcp_config.json` file that def
   },
   "servers": {
     "time": {
-      "type": "python",
-      "path": "mcp-servers/time/server.py"
+      "command": "python",
+      "args": ["mcp-servers/time/server.py"]
     },
     "weather": {
-      "type": "http",
       "url": "http://localhost:5050/mcp"
     }
   }
@@ -114,25 +112,23 @@ The CLI and API can be configured using a `casual_mcp_config.json` file that def
 
 Each model has:
 
-- `provider`: `"openai"` or `"ollama"`
+- `provider`: `"openai"` (more to come)
 - `model`: the model name (e.g., `gpt-4.1`, `qwen3-8b`)
 - `endpoint`: required for custom OpenAI-compatible backends (e.g., LM Studio)
 - `template`: optional name used to apply model-specific tool calling formatting
 
 ### 🔹 `servers`
 
-Each server has:
+Servers can either be local (over stdio) or remote.
 
-- `type`: `"python"`, `"http"`, `"node"`, or `"uvx"`
-- For `python`/`node`: `path` to the script
-- For `http`: `url` to the remote MCP endpoint
-- For `uvx`: `package` for the package to run
-- Optional: `env` for subprocess environments, `system_prompt` to override server prompt
+Local Config:
+- `command`: the command to run the server, e.g `python`, `npm`
+- `args`: the arguments to pass to the server as a list, e.g `["time/server.py"]`
+- Optional: `env`: for subprocess environments, `system_prompt` to override server prompt
 
-### 🔹 `namespaced_tools`
-
-If `true`, tools will be prefixed by server name (e.g., `weather-get_weather`).  
-Useful for disambiguating tool names across servers and avoiding name collision if multiple servers have the same tool name.
+Remote Config:
+- `url`: the url of the mcp server
+- Optional: `transport`: the type of transport, `http`, `sse`, `streamable-http`. Defaults to `http`
 
 ## 🛠 CLI Reference
 
@@ -198,7 +194,7 @@ response = await chat.chat(prompt="What time is it in London?")
 Instantiates LLM providers based on the selected model config.
 
 ```python
-from casual_mcp.providers.provider_factory import ProviderFactory
+from casual_mcp import ProviderFactory
 
 provider_factory = ProviderFactory()
 provider = provider_factory.get_provider("lm-qwen-3", model_config)
@@ -208,27 +204,34 @@ provider = provider_factory.get_provider("lm-qwen-3", model_config)
 Loads your `casual_mcp_config.json` into a validated config object.
 
 ```python
-from casual_mcp.utils import load_config
+from casual_mcp import load_config
 
 config = load_config("casual_mcp_config.json")
+```
+
+#### `load_mcp_client`
+Creats a multi server FastMCP client from the config object
+
+```python
+from casual_mcp import load_mcp_client
+
+config = load_mcp_client(config)
 ```
 
 #### Model and Server Configs
 
 Exported models:
-- PythonMcpServerConfig
-- UvxMcpServerConfig
-- NodeMcpServerConfig
-- HttpMcpServerConfig
+- StdioServerConfig
+- RemoteServerConfig
 - OpenAIModelConfig
 
 Use these types to build valid configs:
 
 ```python
-from casual_mcp.models import OpenAIModelConfig, PythonMcpServerConfig
+from casual_mcp.models import OpenAIModelConfig, StdioServerConfig
 
-model = OpenAIModelConfig( model="llama3", endpoint="http://...")
-server = PythonMcpServerConfig(path="time/server.py")
+model = OpenAIModelConfig(model="llama3", endpoint="http://...")
+server = StdioServerConfig(command="python", args=["time/server.py"])
 ```
 
 #### Chat Messages

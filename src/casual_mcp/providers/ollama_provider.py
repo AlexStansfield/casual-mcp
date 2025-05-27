@@ -6,7 +6,7 @@ from ollama import ChatResponse, Client, ResponseError
 
 from casual_mcp.logging import get_logger
 from casual_mcp.models.generation_error import GenerationError
-from casual_mcp.models.messages import AssistantMessage, CasualMcpMessage
+from casual_mcp.models.messages import AssistantMessage, ChatMessage
 from casual_mcp.providers.abstract_provider import CasualMcpProvider
 
 logger = get_logger("providers.ollama")
@@ -15,7 +15,7 @@ def convert_tools(mcp_tools: list[mcp.Tool]) -> list[ollama.Tool]:
     raise Exception({"message": "under development"})
 
 
-def convert_messages(messages: list[CasualMcpMessage]) -> list[ollama.Message]:
+def convert_messages(messages: list[ChatMessage]) -> list[ollama.Message]:
     raise Exception({"message": "under development"})
 
 
@@ -32,9 +32,9 @@ class OllamaProvider(CasualMcpProvider):
 
     async def generate(
         self,
-        messages: list[CasualMcpMessage],
+        messages: list[ChatMessage],
         tools: list[mcp.Tool]
-    ) -> CasualMcpMessage:
+    ) -> ChatMessage:
         logger.info("Start Generating")
         logger.debug(f"Model: {self.model}")
 
