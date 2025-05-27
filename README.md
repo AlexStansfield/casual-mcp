@@ -130,6 +130,14 @@ Remote Config:
 - `url`: the url of the mcp server
 - Optional: `transport`: the type of transport, `http`, `sse`, `streamable-http`. Defaults to `http`
 
+## Environmental Variables
+
+There are two environmental variables:
+- `OPEN_AI_API_KEY`: required when using the `openai` provider, if using a local model with an openai compatible API it can be any string
+- `TOOL_RESULT_FORMAT`: adjusts the format of the tool result given back to the LLM. Options are `result`, `function_result`, `function_args_result`. Defaults to `result`
+
+You can set them using `export` or by creating a `.env` file.
+
 ## 🛠 CLI Reference
 
 ### `casual-mcp serve`
