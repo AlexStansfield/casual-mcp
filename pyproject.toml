@@ -1,6 +1,6 @@
 [project]
 name = "casual-mcp"
-version = "0.1.0"
+version = "0.2.0"
 description = "Multi-server MCP client for LLM tool orchestration"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -65,7 +65,7 @@ dev = [
 ]
 
 [tool.bumpversion]
-current_version = "0.1.0"
+current_version = "0.2.0"
 commit = true
 tag = true
 
