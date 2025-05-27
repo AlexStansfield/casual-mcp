@@ -65,20 +65,20 @@
     },
     "servers": {
         "math": {
-            "type": "python",
-            "path": "mcp-servers/math/server.py"
+            "command": "python",
+            "args": ["mcp-servers/math/server.py"]
         },
         "time": {
-            "type": "python",
-            "path": "mcp-servers/time-v2/server.py"
+            "command": "python",
+            "args": ["mcp-servers/time-v2/server.py"]
         },
         "weather": {
-            "type": "python",
-            "path": "mcp-servers/weather/server.py"
+            "command": "python",
+            "args": ["mcp-servers/weather/server.py"]
         },
         "words": {
-            "type": "python",
-            "path": "mcp-servers/words/server.py"
+            "command": "python",
+            "args": ["mcp-servers/words/server.py"]
         }
     }
 }

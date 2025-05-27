@@ -70,11 +70,11 @@ Here is a list of functions in JSON format that you can invoke:
 ]
 ```
 
-## ⚙️ Configuration File (`config.json`)
+## ⚙️ Configuration File (`casual_mcp_config.json`)
 
 📄 See the [Programmatic Usage](#-programmatic-usage) section to build configs and messages with typed models.
 
-The CLI and API can be configured using a `config.json` file that defines:
+The CLI and API can be configured using a `casual_mcp_config.json` file that defines:
 
 - 🔧 Available **models** and their providers
 - 🧰 Available **MCP tool servers**
@@ -194,17 +194,6 @@ chat = McpToolChat(mcp_client, provider, system_prompt)
 response = await chat.chat(prompt="What time is it in London?")
 ```
 
-#### `MultiServerMCPClient`
-Connects to multiple MCP tool servers and manages available tools.
-
-```python
-from casual_mcp import MultiServerMCPClient
-
-mcp_client = MultiServerMCPClient()
-await mcp_client.load_config(config["servers"])
-tools = await mcp_client.list_tools()
-```
-
 #### `ProviderFactory`
 Instantiates LLM providers based on the selected model config.
 
@@ -216,12 +205,12 @@ provider = provider_factory.get_provider("lm-qwen-3", model_config)
 ```
 
 #### `load_config`
-Loads your `config.json` into a validated config object.
+Loads your `casual_mcp_config.json` into a validated config object.
 
 ```python
 from casual_mcp.utils import load_config
 
-config = load_config("config.json")
+config = load_config("casual_mcp_config.json")
 ```
 
 #### Model and Server Configs
@@ -264,7 +253,7 @@ messages = [
 ### Example
 
 ```python
-from casual_mcp import McpToolChat, MultiServerMCPClient, load_config, ProviderFactory
+from casual_mcp import McpToolChat, load_config, load_mcp_client, ProviderFactory
 from casual_mcp.models import SystemMessage, UserMessage
 
 model = "gpt-4.1-nano"
@@ -276,10 +265,10 @@ Respond naturally and confidently, as if you already know all the facts."""),
 ]
 
 # Load the Config from the File
-config = load_config("config.json")
+config = load_config("casual_mcp_config.json")
 
 # Setup the MultiServer MCP Client
-mcp_client = MultiServerMCPClient()
+mcp_client = load_mcp_client(config)
 await mcp_client.load_config(config.servers)
 
 # Get the Provider for the Model

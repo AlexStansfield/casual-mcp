@@ -2,6 +2,7 @@ import os
 from typing import TypeAlias
 
 import mcp
+from fastmcp import Client
 
 from casual_mcp.logging import get_logger
 from casual_mcp.models.model_config import ModelConfig
@@ -13,15 +14,22 @@ logger = get_logger("providers.factory")
 LLMProvider: TypeAlias = OpenAiProvider | OllamaProvider
 
 class ProviderFactory:
-    def __init__(self):
-        self.providers: dict[str, LLMProvider] = {}
+    providers: dict[str, LLMProvider] = {}
+    tools: list[mcp.Tool] = None
+
+    def __init__(self, mcp_client: Client):
+        self.mcp_client = mcp_client
 
 
     def set_tools(self, tools: list[mcp.Tool]):
         self.tools = tools
 
 
-    def get_provider(self, name: str, config: ModelConfig) -> LLMProvider:
+    async def get_provider(self, name: str, config: ModelConfig) -> LLMProvider:
+        if not self.tools:
+            async with self.mcp_client:
+                self.tools = await self.mcp_client.list_tools()
+
         if self.providers.get(name):
             return self.providers.get(name)
 

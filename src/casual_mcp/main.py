@@ -6,16 +6,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
 
-from casual_mcp import McpToolChat, MultiServerMCPClient
+from casual_mcp import McpToolChat
 from casual_mcp.logging import configure_logging, get_logger
 from casual_mcp.models.messages import CasualMcpMessage
 from casual_mcp.providers.provider_factory import ProviderFactory
-from casual_mcp.utils import load_config, render_system_prompt
+from casual_mcp.utils import load_config, load_mcp_client, render_system_prompt
 
 load_dotenv()
-config = load_config("config.json")
-mcp_client = MultiServerMCPClient(namespace_tools=config.namespace_tools)
-provider_factory = ProviderFactory()
+config = load_config("casual_mcp_config.json")
+mcp_client = load_mcp_client(config)
+provider_factory = ProviderFactory(mcp_client)
 
 app = FastAPI()
 
@@ -64,14 +64,15 @@ async def perform_chat(
 ) -> list[CasualMcpMessage]:
     # Get Provider from Model Config
     model_config = config.models[model]
-    provider = provider_factory.get_provider(model, model_config)
+    provider = await provider_factory.get_provider(model, model_config)
 
     if not system:
         if (model_config.template):
-            system = render_system_prompt(
-                f"{model_config.template}.j2",
-                await mcp_client.list_tools()
-            )
+            async with mcp_client:
+                system = render_system_prompt(
+                    f"{model_config.template}.j2",
+                    await mcp_client.list_tools()
+                )
         else:
             system = default_system_prompt
 
@@ -85,10 +86,6 @@ async def perform_chat(
 
 @app.post("/chat")
 async def chat(req: GenerateRequest):
-    if len(mcp_client.tools) == 0:
-        await mcp_client.load_config(config.servers)
-        provider_factory.set_tools(await mcp_client.list_tools())
-
     messages = await perform_chat(
         req.model,
         system=req.system_prompt,

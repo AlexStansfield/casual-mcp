@@ -1,9 +1,7 @@
 from .mcp_server_config import (
-    HttpMcpServerConfig,
     McpServerConfig,
-    NodeMcpServerConfig,
-    PythonMcpServerConfig,
-    UvxMcpServerConfig,
+    RemoteServerConfig,
+    StdioServerConfig,
 )
 from .messages import (
     AssistantMessage,
@@ -26,8 +24,6 @@ __all__ = [
     "ModelConfig",
     "OpenAIModelConfig",
     "McpServerConfig",
-    "PythonMcpServerConfig",
-    "UvxMcpServerConfig",
-    "NodeMcpServerConfig",
-    "HttpMcpServerConfig",
+    "StdioServerConfig",
+    "RemoteServerConfig",
 ]
