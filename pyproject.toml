@@ -19,6 +19,11 @@ dependencies = [
     "uvicorn>=0.34.2",
 ]
 
+[project.urls]
+"Homepage" = "https://github.com/AlexStansfield/casual-mcp"
+"Repository" = "https://github.com/AlexStansfield/casual-mcp"
+"Issue Tracker" = "https://github.com/AlexStansfield/casual-mcp/issues"
+
 [project.optional-dependencies]
 dev = [
     "ruff",
@@ -58,3 +63,12 @@ dev = [
     "pytest>=8.3.5",
     "ruff>=0.11.10",
 ]
+
+[tool.bumpversion]
+current_version = "0.1.0"
+commit = true
+tag = true
+
+[tool.bumpversion.file."pyproject.toml"]
+search = 'version = "{current_version}"'
+replace = 'version = "{new_version}"'
