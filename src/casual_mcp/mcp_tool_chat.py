@@ -55,9 +55,7 @@ class McpToolChat:
         # Fetch the session if we have a session ID
         if session_id:
             messages = get_session_messages(session_id)
-
-        # Initialise the messages if we don't have any
-        if not messages:
+        else:
             messages: list[ChatMessage] = []
 
         # Add the prompt as a user message
