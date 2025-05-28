@@ -32,6 +32,7 @@ You must not speculate or guess about dates — if a date is given to you by a t
 Always present information as current and factual.
 """
 
+
 class GenerateRequest(BaseModel):
     session_id: str | None = Field(
         default=None, title="Session to use"
@@ -42,11 +43,20 @@ class GenerateRequest(BaseModel):
     system_prompt: str | None = Field(
         default=None, title="System Prompt to use"
     )
-    user_prompt: str = Field(
+    prompt: str = Field(
         title="User Prompt"
     )
-    messages: list[ChatMessage] | None = Field(
-        default=None, title="Previous messages to supply to the LLM"
+
+
+class ChatRequest(BaseModel):
+    model: str = Field(
+        title="Model to user"
+    )
+    system_prompt: str | None = Field(
+        default=None, title="System Prompt to use"
+    )
+    messages: list[ChatMessage] = Field(
+        title="Previous messages to supply to the LLM"
     )
 
 sys.path.append(str(Path(__file__).parent.resolve()))
@@ -55,17 +65,47 @@ sys.path.append(str(Path(__file__).parent.resolve()))
 configure_logging(os.getenv("LOG_LEVEL", 'INFO'))
 logger = get_logger("main")
 
-async def perform_chat(
-    model,
-    user,
-    system: str | None = None,
-    messages: list[ChatMessage] = None,
-    session_id: str | None = None
-) -> list[ChatMessage]:
+
+@app.post("/chat")
+async def chat(req: ChatRequest):
+    chat = await get_chat(req.model, req.system_prompt)
+    messages = await chat.chat(req.messages)
+
+    return {
+        "messages": messages,
+        "response": messages[len(messages) - 1].content
+    }
+
+
+@app.post("/generate")
+async def generate(req: GenerateRequest):
+    chat = await get_chat(req.model, req.system_prompt)
+    messages = await chat.generate(
+        req.prompt,
+        req.session_id
+    )
+
+    return {
+        "messages": messages,
+        "response": messages[len(messages) - 1].content
+    }
+
+
+@app.get("/generate/session/{session_id}")
+async def get_generate_session(session_id):
+    session = McpToolChat.get_session(session_id)
+    if not session:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    return session
+
+
+async def get_chat(model: str, system: str | None = None) -> McpToolChat:
     # Get Provider from Model Config
     model_config = config.models[model]
     provider = await provider_factory.get_provider(model, model_config)
 
+    # Get the system prompt
     if not system:
         if (model_config.template):
             async with mcp_client:
@@ -76,40 +116,4 @@ async def perform_chat(
         else:
             system = default_system_prompt
 
-    chat = McpToolChat(mcp_client, provider, system)
-    return await chat.chat(
-        prompt=user,
-        messages=messages,
-        session_id=session_id
-    )
-
-
-@app.post("/chat")
-async def chat(req: GenerateRequest):
-    messages = await perform_chat(
-        req.model,
-        system=req.system_prompt,
-        user=req.user_prompt,
-        messages=req.messages,
-        session_id=req.session_id
-    )
-
-    return {
-        "messages": messages,
-        "response": messages[len(messages) - 1].content
-    }
-
-
-# This endpoint will either go away or be used for something else, don't use it
-@app.post("/generate")
-async def generate_response(req: GenerateRequest):
-    return await chat(req)
-
-
-@app.get("/chat/session/{session_id}")
-async def get_chat_session(session_id):
-    session = McpToolChat.get_session(session_id)
-    if not session:
-        raise HTTPException(status_code=404, detail="Session not found")
-
-    return session
+    return McpToolChat(mcp_client, provider, system)

@@ -18,8 +18,26 @@ logger = get_logger("mcp_tool_chat")
 sessions: dict[str, list[ChatMessage]] = {}
 
 
+def get_session_messages(session_id: str | None):
+    global sessions
+
+    if not sessions.get(session_id):
+        logger.info(f"Starting new session {session_id}")
+        sessions[session_id] = []
+    else:
+        logger.info(
+            f"Retrieving session {session_id} of length {len(sessions[session_id])}"
+        )
+    return sessions[session_id].copy()
+
+
+def add_messages_to_session(session_id: str, messages: list[ChatMessage]):
+    global sessions
+    sessions[session_id].extend(messages.copy())
+
+
 class McpToolChat:
-    def __init__(self, mcp_client: Client, provider: LLMProvider, system: str):
+    def __init__(self, mcp_client: Client, provider: LLMProvider, system: str = None):
         self.provider = provider
         self.mcp_client = mcp_client
         self.system = system
@@ -29,47 +47,58 @@ class McpToolChat:
         global sessions
         return sessions.get(session_id)
 
-    async def chat(
+    async def generate(
         self,
-        prompt: str | None = None,
-        messages: list[ChatMessage] = None,
+        prompt: str,
         session_id: str | None = None
     ) -> list[ChatMessage]:
-        global sessions
-
-        # todo: check that we have a prompt or that there is a user message in messages
-
-        # If we have a session ID then create if new and fetch it
+        # Fetch the session if we have a session ID
         if session_id:
-            if not sessions.get(session_id):
-                logger.info(f"Starting new session {session_id}")
-                sessions[session_id] = []
-            else:
-                logger.info(
-                    f"Retrieving session {session_id} of length {len(sessions[session_id])}"
-                )
-            messages = sessions[session_id].copy()
+            messages = get_session_messages(session_id)
+
+        # Initialise the messages if we don't have any
+        if not messages:
+            messages: list[ChatMessage] = []
+
+        # Add the prompt as a user message
+        user_message = UserMessage(content=prompt)
+        messages.append(user_message)
+
+        # Add the user message to the session
+        if session_id:
+            add_messages_to_session(session_id, [user_message])
+
+        # Perform Chat
+        response = await self.chat(messages=messages)
+
+        # Add responses to session
+        if session_id:
+            add_messages_to_session(session_id, response)
+
+        return response
+
+
+    async def chat(
+        self,
+        messages: list[ChatMessage]
+    ) -> list[ChatMessage]:
+        # Add a system message if required
+        has_system_message = any(message.role == 'system' for message in messages)
+        if self.system and not has_system_message:
+            # Insert the system message at the start of the messages
+            messages.insert(0, SystemMessage(content=self.system))
 
         logger.info("Start Chat")
         async with self.mcp_client:
             tools = await self.mcp_client.list_tools()
 
-        if messages is None or len(messages) == 0:
-            message_history = []
-            messages = [SystemMessage(content=self.system)]
-        else:
-            message_history = messages.copy()
-
-        if prompt:
-            messages.append(UserMessage(content=prompt))
-
-        response: str | None = None
+        response_messages: list[ChatMessage] = []
         while True:
             logger.info("Calling the LLM")
             ai_message = await self.provider.generate(messages, tools)
-            response = ai_message.content
 
             # Add the assistant's message
+            response_messages.append(ai_message)
             messages.append(ai_message)
 
             if not ai_message.tool_calls:
@@ -86,18 +115,14 @@ class McpToolChat:
                         return messages
                     if result:
                         messages.append(result)
+                        response_messages.append(result)
                         result_count = result_count + 1
 
                 logger.info(f"Added {result_count} tool results")
 
-        logger.debug(f"""Final Response:
-{response} """)
+        logger.debug(f"Final Response: {response_messages[-1].content}")
 
-        new_messages = [item for item in messages if item not in message_history]
-        if session_id:
-            sessions[session_id].extend(new_messages)
-
-        return new_messages
+        return response_messages
 
 
     async def execute(self, tool_call: AssistantToolCall):
