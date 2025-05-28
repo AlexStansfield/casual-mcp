@@ -6,7 +6,7 @@
 **Casual MCP** is a Python framework for building, evaluating, and serving LLMs with tool-calling capabilities using [Model Context Protocol (MCP)](https://modelcontextprotocol.io).  
 It includes:
 
-- ✅ A multi-server MCP client
+- ✅ A multi-server MCP client using [FastMCP](https://github.com/jlowin/fastmcp)
 - ✅ Provider support for OpenAI (and OpenAI compatible APIs)
 - ✅ A recursive tool-calling chat loop
 - ✅ System prompt templating with Jinja2
@@ -121,12 +121,12 @@ Each model has:
 
 Servers can either be local (over stdio) or remote.
 
-Local Config:
+#### Local Config:
 - `command`: the command to run the server, e.g `python`, `npm`
 - `args`: the arguments to pass to the server as a list, e.g `["time/server.py"]`
 - Optional: `env`: for subprocess environments, `system_prompt` to override server prompt
 
-Remote Config:
+#### Remote Config:
 - `url`: the url of the mcp server
 - Optional: `transport`: the type of transport, `http`, `sse`, `streamable-http`. Defaults to `http`
 
@@ -154,12 +154,12 @@ Loads the config and outputs the list of MCP servers you have configured.
 ```
 $ casual-mcp servers
 ┏━━━━━━━━━┳━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━┓
-┃ Name    ┃ Type   ┃ Path / Package / Url          ┃ Env ┃
+┃ Name    ┃ Type   ┃ Command / Url                 ┃ Env ┃
 ┡━━━━━━━━━╇━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━┩
-│ math    │ python │ mcp-servers/math/server.py    │     │
-│ time    │ python │ mcp-servers/time-v2/server.py │     │
-│ weather │ python │ mcp-servers/weather/server.py │     │
-│ words   │ python │ mcp-servers/words/server.py   │     │
+│ math    │ local  │ mcp-servers/math/server.py    │     │
+│ time    │ local  │ mcp-servers/time-v2/server.py │     │
+│ weather │ local  │ mcp-servers/weather/server.py │     │
+│ words   │ remote │ https://localhost:3000/mcp    │     │
 └─────────┴────────┴───────────────────────────────┴─────┘
 ```
 
@@ -193,9 +193,24 @@ Orchestrates LLM interaction with tools using a recursive loop.
 
 ```python
 from casual_mcp import McpToolChat
+from casual_mcp.models import SystemMessage, UserMessage
 
 chat = McpToolChat(mcp_client, provider, system_prompt)
-response = await chat.chat(prompt="What time is it in London?")
+
+# Generate method to take user prompt
+response = await chat.generate("What time is it in London?")
+
+# Generate method with session
+response = await chat.generate("What time is it in London?", "my-session-id")
+
+# Chat method that takes list of chat messages 
+# note: system prompt ignored if sent in messages so no need to set
+chat = McpToolChat(mcp_client, provider) 
+messages = [
+  SystemMessage(content="You are a cool dude who likes to help the user"),
+  UserMessage(content="What time is it in London?")
+]
+response = await chat.chat(messages)
 ```
 
 #### `ProviderFactory`
@@ -204,8 +219,8 @@ Instantiates LLM providers based on the selected model config.
 ```python
 from casual_mcp import ProviderFactory
 
-provider_factory = ProviderFactory()
-provider = provider_factory.get_provider("lm-qwen-3", model_config)
+provider_factory = ProviderFactory(mcp_client)
+provider = await provider_factory.get_provider("lm-qwen-3", model_config)
 ```
 
 #### `load_config`
@@ -278,18 +293,16 @@ Respond naturally and confidently, as if you already know all the facts."""),
 # Load the Config from the File
 config = load_config("casual_mcp_config.json")
 
-# Setup the MultiServer MCP Client
+# Setup the MCP Client
 mcp_client = load_mcp_client(config)
-await mcp_client.load_config(config.servers)
 
 # Get the Provider for the Model
-provider_factory.set_tools(await mcp_client.list_tools())
-provider_factory = ProviderFactory()
-provider = provider_factory.get_provider(model, config.models[model])
+provider_factory = ProviderFactory(mcp_client)
+provider = await provider_factory.get_provider(model, config.models[model])
 
 # Perform the Chat and Tool calling
-chat = McpToolChat(mcp_client, provider, system_prompt)
-response_messages = await chat.chat(messages=messages)
+chat = McpToolChat(mcp_client, provider)
+response_messages = await chat.chat(messages)
 ```
 
 ## 🚀 API Usage
@@ -300,24 +313,55 @@ response_messages = await chat.chat(messages=messages)
 casual-mcp serve --host 0.0.0.0 --port 8000
 ```
 
-You can then POST to `/chat` to trigger tool-calling LLM responses.
+### Chat
 
-The request takes a json body consisting of:
+#### Endpoint: `POST /chat`
+
+#### Request Body:
 - `model`: the LLM model to use
-- `user_prompt`: optional, the latest user message (required if messages isn't provided)
-- `messages`: optional, list of chat messages (system, assistant, user, etc) that you can pass to the api, allowing you to keep your own chat session in the client calling the api
-- `session_id`: an optional ID that stores all the messages from the session and provides them back to the LLM for context
+- `messages`: list of chat messages (system, assistant, user, etc) that you can pass to the api, allowing you to keep your own chat session in the client calling the api
 
-You can either pass in a `user_prompt` or a list of `messages` depending on your use case.
-
-Example:
+#### Example:
 ```
 {
-    "session_id": "my-test-session",
-    "model": "gpt-4o-mini",
-    "user_prompt": "can you explain what the word consistent means?"
+    "model": "gpt-4.1-nano",
+    "messages": [
+        {
+            "role": "user",
+            "content": "can you explain what the word consistent means?"
+        }
+    ]
 }
 ```
+
+### Generate
+
+The generate endpoint allows you to send a user prompt as a string. 
+
+It also support sessions that keep a record of all messages in the session and feeds them back into the LLM for context. Sessions are stored in memory so are cleared when the server is restarted
+
+#### Endpoint: `POST /generate`
+
+####  Request Body:
+- `model`: the LLM model to use
+- `prompt`: the user prompt 
+- `session_id`: an optional ID that stores all the messages from the session and provides them back to the LLM for context
+
+#### Example:
+```
+{
+    "session_id": "my-session",
+    "model": "gpt-4o-mini",
+    "prompt": "can you explain what the word consistent means?"
+}
+```
+
+### Get Session
+
+Get all the messages from a session 
+
+#### Endpoint: `GET /generate/session/{session_id}`
+
 
 ## License
 
