@@ -79,6 +79,13 @@
         "words": {
             "command": "python",
             "args": ["mcp-servers/words/server.py"]
+        },
+        "fetch": {
+            "command": "npx",
+            "args": ["-y", "@lmcc-dev/mult-fetch-mcp-server"],
+            "env": {
+                "MCP_LANG": "en"
+            }
         }
     }
 }

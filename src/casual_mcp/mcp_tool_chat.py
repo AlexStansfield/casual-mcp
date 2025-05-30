@@ -84,6 +84,7 @@ class McpToolChat:
         has_system_message = any(message.role == 'system' for message in messages)
         if self.system and not has_system_message:
             # Insert the system message at the start of the messages
+            logger.debug(f"Adding System Message")
             messages.insert(0, SystemMessage(content=self.system))
 
         logger.info("Start Chat")
