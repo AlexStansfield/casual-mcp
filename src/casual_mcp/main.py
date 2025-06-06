@@ -38,7 +38,7 @@ class GenerateRequest(BaseModel):
         default=None, title="Session to use"
     )
     model: str = Field(
-        title="Model to user"
+        title="Model to use"
     )
     system_prompt: str | None = Field(
         default=None, title="System Prompt to use"
@@ -50,7 +50,7 @@ class GenerateRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     model: str = Field(
-        title="Model to user"
+        title="Model to use"
     )
     system_prompt: str | None = Field(
         default=None, title="System Prompt to use"

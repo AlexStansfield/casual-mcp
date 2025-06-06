@@ -233,7 +233,7 @@ config = load_config("casual_mcp_config.json")
 ```
 
 #### `load_mcp_client`
-Creats a multi server FastMCP client from the config object
+Creates a multi server FastMCP client from the config object
 
 ```python
 from casual_mcp import load_mcp_client

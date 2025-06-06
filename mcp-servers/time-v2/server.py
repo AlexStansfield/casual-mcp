@@ -4,6 +4,7 @@ from typing import Annotated
 from fastmcp import FastMCP
 from pydantic import Field
 import calendar
+import dateparser
 
 mcp = FastMCP("Time and Date 🚀")
 
