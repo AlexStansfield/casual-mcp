@@ -1,7 +1,7 @@
 from typing import Any
 
 import mcp
-from openai import OpenAI
+from openai import AsyncOpenAI
 from openai.types.chat import (
     ChatCompletionAssistantMessageParam,
     ChatCompletionMessageParam,
@@ -137,7 +137,7 @@ class OpenAiProvider(CasualMcpProvider):
         logger.debug(f"Converted Tools: {self.tools}")
         logger.info(f"Adding {len(self.tools)} tools")
         self.model = model
-        self.client = OpenAI(
+        self.client = AsyncOpenAI(
             base_url=endpoint,
             api_key=api_key,
         )
@@ -157,8 +157,10 @@ class OpenAiProvider(CasualMcpProvider):
 
         # Call OpenAi API
         try:
-            result = self.client.chat.completions.create(
-                model=self.model, messages=converted_messages, tools=self.tools
+            result = await self.client.chat.completions.create(
+                model=self.model,
+                messages=converted_messages,
+                tools=self.tools,
             )
 
             response = result.choices[0]
@@ -176,3 +178,31 @@ class OpenAiProvider(CasualMcpProvider):
             logger.debug(f"Converted {len(tool_calls)} tool calls")
 
         return AssistantMessage(content=response.message.content, tool_calls=tool_calls)
+
+    async def generate_stream(
+        self,
+        messages: list[ChatMessage],
+        tools: list[mcp.Tool],
+    ):
+        logger.info("Start Streaming Generation")
+        logger.debug(f"Model: {self.model}")
+
+        converted_messages = convert_messages(messages)
+        logger.debug(f"Converted Messages: {converted_messages}")
+        logger.info(f"Adding {len(converted_messages)} messages")
+
+        try:
+            stream = await self.client.chat.completions.create(
+                model=self.model,
+                messages=converted_messages,
+                tools=self.tools,
+                stream=True,
+            )
+        except Exception as e:
+            logger.warning(f"Error in Generation: {e}")
+            raise GenerationError(str(e))
+
+        async for chunk in stream:
+            delta = chunk.choices[0].delta
+            if delta.content:
+                yield delta.content
